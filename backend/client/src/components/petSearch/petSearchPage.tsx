@@ -1,55 +1,52 @@
-// src/components/petSearch/petSearchPage.tsx
-
 import queryString from "query-string";
-import { useEffect, useState, useContext } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { SearchBar } from "./searchBar";
 import { PetCard } from "./petCard";
 import { Pagination } from "./pagination";
 import AddPetModal from "./AddPetModal";
-import CartContext from "../../context/cartContext/cartContext";
-import { multipleSpeciesStringConverter } from "../helpers";
-
-// Types
-interface Pet {
-  _id: string;
-  species: string;
-  name: string;
-  fee: number;
-  image?: string;
-  filename?: string;
-  gender: string;
-  age: number;
-  dateAddedToSite: string;
-  description: string;
-  town?: string;
-  zip?: string;
-}
+import EditPetModal from "./EditPetModal";
+import { Pet } from "../../types";
+import useAuth from "../../context/userContext/useAuth";
 
 export const PetSearchPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
 
-  // State for fetched pets and total count
-  const [pets, setPets] = useState<{ data: Pet[]; totalPetsResults: number }>({
-    data: [],
-    totalPetsResults: 0,
-  });
+  // Main pet data
+  const [pets, setPets] = useState<{ data: Pet[]; totalPetsResults: number } | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // If you have a modal for adding pets
+  // Existing Add Pet modal
   const [showAddModal, setShowAddModal] = useState(false);
 
-  // Example fetch using query string
+  // For editing
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [petToEdit, setPetToEdit] = useState<Pet | null>(null);
+
+  // Auth checks
+  const { user } = useAuth();
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+
+  // Update URL query params
+  const updateSearchParams = (key: string, value: string) => {
+    const params = new URLSearchParams(searchParams);
+    params.set(key, value);
+    setSearchParams(params);
+  };
+
+  // Fetch pets from backend
   useEffect(() => {
     const fetchPets = async () => {
       setLoading(true);
       try {
         const query = queryString.stringify(Object.fromEntries(searchParams));
         const response = await fetch(`http://localhost:8001/api/v1/pets?${query}`);
-        if (!response.ok) {
-          throw new Error("Failed to fetch pets");
-        }
+        if (!response.ok) throw new Error("Failed to fetch pets");
+
         const result = await response.json();
+        console.log("Fetched pets:", result);
+
         setPets(result);
       } catch (error) {
         console.error("Error fetching pets:", error);
@@ -61,122 +58,157 @@ export const PetSearchPage: React.FC = () => {
     fetchPets();
   }, [searchParams]);
 
-  // Clear all query params
-  const clearQuery = () => {
-    setSearchParams({});
-  };
-
-  // Sorting
-  const sortQuery = (e: React.MouseEvent<HTMLButtonElement>) => {
-    const { name: key, id: value } = e.currentTarget;
-    let parsed = queryString.parse(window.location.search);
-
-    if (!parsed[key]) {
-      parsed[key] = value;
-    } else if (key in parsed && value === parsed[key]) {
-      delete parsed[key];
-    } else {
-      parsed[key] = value;
+  // Add Pet
+  const handleAddPet = () => {
+    if (!user) {
+      setShowLoginPrompt(true);
+      return;
     }
-    delete parsed["page"];
-    setSearchParams(queryString.stringify(parsed));
-  };
-
-  // Species filter
-  const speciesQuery = (e: React.MouseEvent<HTMLButtonElement>) => {
-    const { name: key, id: value } = e.currentTarget;
-    let parsed = queryString.parse(window.location.search);
-
-    if (!parsed.species) {
-      parsed.species = [];
-    }
-    if (!Array.isArray(parsed.species)) {
-      parsed.species = [parsed.species];
-    }
-
-    if (!parsed[key]) {
-      parsed[key] = value;
-    } else if (parsed.species.includes(value)) {
-      parsed.species = parsed.species.filter((element) => element !== value);
-    } else {
-      parsed.species.push(value);
-    }
-    delete parsed["page"];
-    setSearchParams(queryString.stringify(parsed));
-  };
-
-  // Pagination logic
-  const resultsCount = pets.totalPetsResults;
-  const limit = Number(searchParams.get("limit") || 6);
-  const page = Number(searchParams.get("page") || 1);
-  const pages = Math.ceil(resultsCount / limit);
-  const pageList = Array.from({ length: pages }, (_, i) => i + 1);
-  const next = page < pages ? page + 1 : page;
-  const previous = page > 1 ? page - 1 : page;
-
-  // "Add Pet" button -> open modal
-  const handleAddPet = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
     setShowAddModal(true);
   };
 
-  // If a new pet is added, prepend it
-  const handlePetAdded = (newPet: Pet) => {
-    setPets((prev) => ({
-      ...prev,
-      data: [newPet, ...prev.data],
-      totalPetsResults: prev.totalPetsResults + 1,
-    }));
+  // Delete Pet
+  const handleDeletePet = async (petId: string) => {
+    if (!user) {
+      setShowLoginPrompt(true);
+      return;
+    }
+    if (!window.confirm("Are you sure you want to delete this pet?")) return;
+
+    try {
+      const response = await fetch(`http://localhost:8001/api/v1/pets/${petId}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Failed to delete pet");
+
+      setPets((prev) => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          data: prev.data.filter((pet) => pet.id.toString() !== petId),
+          totalPetsResults: prev.totalPetsResults - 1,
+        };
+      });
+    } catch (error) {
+      console.error("Error deleting pet:", error);
+    }
   };
 
-  const cartContext = useContext(CartContext);
+  // New pet added
+  const handlePetAdded = (newPet: Pet) => {
+    setPets((prev) =>
+      prev
+        ? {
+            ...prev,
+            data: [newPet, ...prev.data],
+            totalPetsResults: prev.totalPetsResults + 1,
+          }
+        : { data: [newPet], totalPetsResults: 1 }
+    );
+  };
+
+  // Edit Pet
+  const onEditPet = (pet: Pet) => {
+    setPetToEdit(pet);
+    setShowEditModal(true);
+  };
+
+  // After successful edit
+  const handlePetUpdated = (updatedPet: Pet) => {
+    setShowEditModal(false);
+    setPetToEdit(null);
+
+    // Merge updated pet in state
+    setPets((prev) => {
+      if (!prev) return null;
+      const newData = prev.data.map((p) => (p.id === updatedPet.id ? updatedPet : p));
+      return { ...prev, data: newData };
+    });
+  };
+
+  // Pagination
+  const totalPages = Math.ceil((pets?.totalPetsResults || 1) / 10);
+  const currentPage = Number(searchParams.get("page")) || 1;
+  const pageList = Array.from({ length: totalPages }, (_, i) => (i + 1).toString());
 
   return (
     <div className="container mx-auto px-4">
+      {/* Debug Header */}
+      {/* <h1 style={{ color: "red" }}>DEBUG: PetSearchPage Loaded</h1> */}
+
       <SearchBar
-        clearQuery={clearQuery}
-        sortQuery={sortQuery}
-        speciesQuery={speciesQuery}
+        speciesQuery={searchParams.get("species") || ""}
+        sortQuery={searchParams.get("sort") || ""}
+        clearQuery={() => setSearchParams({})}
         addPetHandler={handleAddPet}
+        updateSearchParams={updateSearchParams}
       />
 
       {loading ? (
         <p className="text-center">Loading pets...</p>
-      ) : (
+      ) : pets && pets.data.length ? (
         <ul className="flex flex-wrap justify-evenly gap-x-1 gap-y-7 my-5">
-          {pets.data.length ? (
-            pets.data.map((pet) => (
-              <PetCard
-                key={pet._id}
-                species={pet.species}
-                _id={pet._id}
-                name={pet.name}
-                fee={pet.fee}
-                image={pet.image ?? pet.filename ?? ""}
-                gender={pet.gender}
-                age={pet.age}
-                dateAddedToSite={pet.dateAddedToSite}
-                description={pet.description || "No description available"}
-              />
-            ))
-          ) : (
-            <div className="flex flex-col justify-center my-4">
-              <h3 className="text-center mb-4">
-                Woof... We're having trouble finding pets right now.
-              </h3>
-            </div>
-          )}
+          {pets.data.map((pet) => (
+            <PetCard key={pet.id} pet={pet} onDelete={handleDeletePet} onEdit={onEditPet} />
+          ))}
         </ul>
+      ) : (
+        <div className="flex flex-col justify-center my-4">
+          <h3 className="text-center mb-4">
+            Woof... We're having trouble finding pets right now.
+          </h3>
+        </div>
       )}
 
       <div className="flex my-20">
-        <Pagination pageList={pageList} next={next} previous={previous} />
+        <Pagination
+          pageList={pageList}
+          paginationQuery={(e) => updateSearchParams("page", e.currentTarget.id)}
+          previous={(currentPage - 1).toString()}
+          next={(currentPage + 1).toString()}
+        />
       </div>
 
+      {/* Add Pet Modal */}
       {showAddModal && (
         <AddPetModal onClose={() => setShowAddModal(false)} onPetAdded={handlePetAdded} />
+      )}
+
+      {/* Edit Pet Modal */}
+      {showEditModal && petToEdit && (
+        <EditPetModal
+          pet={petToEdit}
+          onClose={() => setShowEditModal(false)}
+          onPetUpdated={handlePetUpdated}
+        />
+      )}
+
+      {/* If user not logged in and tries "Add Pet," show login prompt */}
+      {showLoginPrompt && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded shadow-md max-w-sm mx-auto text-center">
+            <h2 className="text-xl font-bold mb-4">Please Login or Register</h2>
+            <p className="mb-4">You must be logged in to add or delete a pet.</p>
+            <div className="flex justify-center space-x-4">
+              <button
+                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+                onClick={() => setShowLoginPrompt(false)}
+              >
+                Close
+              </button>
+              <button
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                onClick={() => {
+                  setShowLoginPrompt(false);
+                  navigate("/users/login");
+                }}
+              >
+                Login
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
 };
-

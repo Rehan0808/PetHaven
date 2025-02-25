@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 
+
 interface AddPetModalProps {
   onClose: () => void;
   onPetAdded: (pet: any) => void;
@@ -54,6 +55,7 @@ const AddPetModal: React.FC<AddPetModalProps> = ({ onClose, onPetAdded }) => {
     // 3) Append text fields
     Object.entries(adjustedData).forEach(([key, value]) => {
       console.log(`Appending field "${key}":`, value);
+
       dataToSend.append(key, String(value));
     });
 
@@ -67,6 +69,7 @@ const AddPetModal: React.FC<AddPetModalProps> = ({ onClose, onPetAdded }) => {
     dataToSend.forEach((val, key) => {
       console.log(`FormData -> ${key}:`, val);
     });
+    
 
     try {
       const response = await fetch("http://localhost:8001/api/v1/pets", {
@@ -87,6 +90,7 @@ const AddPetModal: React.FC<AddPetModalProps> = ({ onClose, onPetAdded }) => {
     } catch (err) {
       console.error("Submission error:", err);
       alert(`Error: ${(err as Error).message}`);
+
     }
   };
 
@@ -248,4 +252,4 @@ const AddPetModal: React.FC<AddPetModalProps> = ({ onClose, onPetAdded }) => {
   );
 };
 
-export default AddPetModal;
+export default AddPetModal; 

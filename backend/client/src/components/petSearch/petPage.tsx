@@ -2,21 +2,22 @@ import { useState, useContext } from "react";
 import { useLoaderData } from "react-router-dom";
 import CartContext from "../../context/cartContext/cartContext";
 import { multipleSpeciesStringConverter } from "../helpers";
+import { Pet } from "../../types";
 
 // If you have a Pet interface:
-interface Pet {
-  _id: string;
-  name: string;
-  species: string;
-  fee: number;
-  image?: string;
-  gender: string;
-  age: number;
-  dateAddedToSite: string;
-  description: string;
-  town?: string;
-  zip?: string;
-}
+// interface Pet {
+//   _id: string;
+//   name: string;
+//   species: string;
+//   fee: number;
+//   image?: string;
+//   gender: string;
+//   age: number;
+//   dateAddedToSite: string;
+//   description: string;
+//   town?: string;
+//   zip?: string;
+// }
 
 export const PetPage = () => {
   // The loader returns a Pet
@@ -27,9 +28,7 @@ export const PetPage = () => {
 
   const { addToCart, cartItems, removeFromCart } = useContext(CartContext);
 
-  const isInCart = (p: Pet) => {
-    return !!cartItems.find((item) => item._id === p._id);
-  };
+  const isInCart = (p: Pet) => cartItems.some((item) => item._id === p._id);
 
   return (
     <div className="md:flex items-start justify-center py-12 2xl:px-20 md:px-6 px-4">
