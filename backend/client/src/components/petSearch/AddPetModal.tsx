@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-
+import useAuth from "../../context/userContext/useAuth";
 
 interface AddPetModalProps {
   onClose: () => void;
@@ -7,6 +7,7 @@ interface AddPetModalProps {
 }
 
 const AddPetModal: React.FC<AddPetModalProps> = ({ onClose, onPetAdded }) => {
+  const auth = useAuth();
   const [formData, setFormData] = useState({
     name: "",
     species: "Dog",
@@ -21,9 +22,7 @@ const AddPetModal: React.FC<AddPetModalProps> = ({ onClose, onPetAdded }) => {
   const [imageFile, setImageFile] = useState<File | null>(null);
 
   const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -42,55 +41,49 @@ const AddPetModal: React.FC<AddPetModalProps> = ({ onClose, onPetAdded }) => {
     console.log(">>> Current formData:", formData);
     console.log(">>> Current imageFile:", imageFile);
 
-    // 1) Convert species & gender to lowercase to match your model
+    // Convert species & gender to lowercase for your model
     const adjustedData = {
       ...formData,
-      species: formData.species.toLowerCase(), // "Dog" -> "dog"
-      gender: formData.gender.toLowerCase(),   // "Male" -> "male"
+      species: formData.species.toLowerCase(),
+      gender: formData.gender.toLowerCase(),
     };
 
-    // 2) Create FormData object
+    // Create FormData object
     const dataToSend = new FormData();
-
-    // 3) Append text fields
     Object.entries(adjustedData).forEach(([key, value]) => {
-      console.log(`Appending field "${key}":`, value);
-
       dataToSend.append(key, String(value));
     });
 
-    // 4) Append file under the field name "image"
     if (imageFile) {
-      console.log("Appending image file:", imageFile.name);
       dataToSend.append("image", imageFile);
     }
 
-    // Debug final FormData
-    dataToSend.forEach((val, key) => {
-      console.log(`FormData -> ${key}:`, val);
-    });
-    
-
     try {
+      // If you want, you can check if user is logged in:
+      if (!auth.user) {
+        throw new Error("Authentication required. Please log in first.");
+      }
+
+      // NOTE: No Authorization header. We rely on cookies only.
       const response = await fetch("http://localhost:8001/api/v1/pets", {
         method: "POST",
         body: dataToSend,
+        credentials: "include", // This ensures cookies are sent
       });
 
       const responseData = await response.json();
       console.log(">>> Server response:", responseData);
 
       if (!response.ok) {
-        throw new Error(responseData.message || "Failed to add pet");
+        throw new Error(responseData.error || responseData.message || "Failed to add pet");
       }
 
-      // Successfully added, call onPetAdded with new pet data
-      onPetAdded(responseData.pet);
+      // Successfully added
+      onPetAdded(responseData.pet || responseData);
       onClose();
     } catch (err) {
       console.error("Submission error:", err);
       alert(`Error: ${(err as Error).message}`);
-
     }
   };
 
@@ -112,7 +105,7 @@ const AddPetModal: React.FC<AddPetModalProps> = ({ onClose, onPetAdded }) => {
           encType="multipart/form-data"
           className="grid grid-cols-3 gap-2"
         >
-          {/* Row 1: Name, Species, Age */}
+          {/* Name */}
           <div className="flex flex-col">
             <label className="font-medium text-gray-700">Name</label>
             <input
@@ -125,6 +118,7 @@ const AddPetModal: React.FC<AddPetModalProps> = ({ onClose, onPetAdded }) => {
             />
           </div>
 
+          {/* Species */}
           <div className="flex flex-col">
             <label className="font-medium text-gray-700">Species</label>
             <select
@@ -142,6 +136,7 @@ const AddPetModal: React.FC<AddPetModalProps> = ({ onClose, onPetAdded }) => {
             </select>
           </div>
 
+          {/* Age */}
           <div className="flex flex-col">
             <label className="font-medium text-gray-700">Age</label>
             <input
@@ -154,7 +149,7 @@ const AddPetModal: React.FC<AddPetModalProps> = ({ onClose, onPetAdded }) => {
             />
           </div>
 
-          {/* Row 2: Fee, Gender, Zip */}
+          {/* Fee */}
           <div className="flex flex-col">
             <label className="font-medium text-gray-700">Fee</label>
             <input
@@ -167,6 +162,7 @@ const AddPetModal: React.FC<AddPetModalProps> = ({ onClose, onPetAdded }) => {
             />
           </div>
 
+          {/* Gender */}
           <div className="flex flex-col">
             <label className="font-medium text-gray-700">Gender</label>
             <select
@@ -181,6 +177,7 @@ const AddPetModal: React.FC<AddPetModalProps> = ({ onClose, onPetAdded }) => {
             </select>
           </div>
 
+          {/* Zip */}
           <div className="flex flex-col">
             <label className="font-medium text-gray-700">Zip</label>
             <input
@@ -192,7 +189,7 @@ const AddPetModal: React.FC<AddPetModalProps> = ({ onClose, onPetAdded }) => {
             />
           </div>
 
-          {/* Row 3: Town, Image */}
+          {/* Town */}
           <div className="flex flex-col">
             <label className="font-medium text-gray-700">Town</label>
             <input
@@ -204,6 +201,7 @@ const AddPetModal: React.FC<AddPetModalProps> = ({ onClose, onPetAdded }) => {
             />
           </div>
 
+          {/* Image */}
           <div className="flex flex-col">
             <label className="font-medium text-gray-700">Choose Image</label>
             <input
@@ -215,9 +213,7 @@ const AddPetModal: React.FC<AddPetModalProps> = ({ onClose, onPetAdded }) => {
             />
           </div>
 
-          <div></div>
-
-          {/* Row 4: Description */}
+          {/* Description */}
           <div className="flex flex-col col-span-3">
             <label className="font-medium text-gray-700">Description</label>
             <textarea
@@ -230,7 +226,7 @@ const AddPetModal: React.FC<AddPetModalProps> = ({ onClose, onPetAdded }) => {
             />
           </div>
 
-          {/* Row 5: Buttons */}
+          {/* Buttons */}
           <div className="flex justify-end gap-3 mt-2 col-span-3">
             <button
               type="button"
@@ -252,4 +248,4 @@ const AddPetModal: React.FC<AddPetModalProps> = ({ onClose, onPetAdded }) => {
   );
 };
 
-export default AddPetModal; 
+export default AddPetModal;

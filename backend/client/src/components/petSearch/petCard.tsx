@@ -19,6 +19,10 @@ export const PetCard = ({ pet, onDelete, onEdit }: PetCardProps) => {
   // Check if the pet is in the cart
   const isInCart = (p: Pet) => cartItems.some((item) => item.id === p.id);
 
+  // Determine if this user can delete (owns the pet)
+  // pet.owner_id might be null or might not match user.id
+  const canDelete = user && pet.owner_id === user.id;
+
   // "Are you sure?" for Delete
   const [showConfirm, setShowConfirm] = useState(false);
   const handleDeleteClick = () => {
@@ -31,7 +35,6 @@ export const PetCard = ({ pet, onDelete, onEdit }: PetCardProps) => {
 
   const confirmDelete = () => {
     setShowConfirm(false);
-    // Use pet.id instead of pet._id
     const petId = pet.id?.toString();
     if (!petId) {
       console.error("Pet ID is undefined!");
@@ -60,22 +63,18 @@ export const PetCard = ({ pet, onDelete, onEdit }: PetCardProps) => {
       setShowLoginPrompt(true);
       return;
     }
-    // Call parent's onEdit to open EditPetModal
     onEdit(pet);
   };
 
   return (
     <li className="max-w-sm md:w-2/5 bg-white border border-gray-200 rounded-lg shadow">
       <div className="relative">
-        {/* Use pet.id instead of pet._id */}
+        {/* Pet Image / Link */}
         <Link to={`/pet/${pet.id}`}>
-
           <img
             className="rounded-t-lg"
             src={pet.image ? `/uploads/${pet.image}` : "/default-image.png"}
-
             alt={`${pet.species} for adoption`}
-
             loading="lazy"
           />
         </Link>
@@ -85,17 +84,21 @@ export const PetCard = ({ pet, onDelete, onEdit }: PetCardProps) => {
           onClick={handleCartClick}
           className="absolute top-2 right-2 flex flex-col items-center text-gray-900 bg-white rounded-full p-2 shadow hover:shadow-lg hover:scale-105 transition"
         >
-          <svg
-            aria-hidden="true"
-            focusable="false"
-            className="w-6 h-6 fill-current"
-            role="img"
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="50 100 600 400"
-          >
-            <g fill="currentColor">
-              {/* Paths omitted for brevity */}
-            </g>
+                  <svg
+                    aria-hidden="true"
+                    focusable="false"
+                    className="w-5 h-5"
+                    role="img"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 600 512"
+                  >
+                                        <g fill="currentColor">
+                      <path d="m484.2 167.89h15.422l-88.594-88.594c-2.0781-2.0781-5.5781-2.0781-7.7656 0-1.4219 1.4219-1.6406 3.0625-1.6406 3.8281 0 0.875 0.21875 2.5156 1.6406 3.8281z" />
+                      <path d="m296.73 86.953c1.4219-1.4219 1.6406-3.0625 1.6406-3.8281 0-0.875-0.21875-2.5156-1.6406-3.8281-2.0781-2.0781-5.5781-2.0781-7.7656 0l-88.594 88.594h15.422z" />
+                      <path d="m564.7 189.77h-429.41c-18.047 0-32.812 14.766-32.812 32.812v4.9219c0 18.047 14.766 32.812 32.812 32.812h429.41c18.047 0 32.812-14.766 32.812-32.812v-4.9219c0-18.047-14.766-32.812-32.812-32.812z" />
+                      <path d="m350 422.73c39.812-16.297 53.703-43.422 49.656-63.438-2.5156-11.812-10.5-18.922-21.438-18.922-6.5625 0-14.438 2.9531-21.984 8.2031-3.8281 2.625-8.8594 2.625-12.578-0.10938-7.6562-5.4688-15.312-8.4219-22.094-8.4219-10.938 0-18.812 7.1094-21.219 19.141-4.0469 20.344 9.7344 47.688 49.656 63.547z" />
+                      <path d="m175.55 454.34c2.4062 15.969 16.297 28 32.484 28h284.05c16.188 0 30.078-12.031 32.484-28l25.375-172.16h-399.88zm103.36-99.422c4.375-22.312 21.219-36.641 42.656-36.641 9.4062 0 19.031 2.8438 28.547 8.4219 9.4062-5.3594 19.031-8.0938 28.219-8.0938 21.328 0 38.172 14.219 42.766 36.312v0.10938c6.0156 29.422-12.031 68.469-65.625 89.141-0.21875 0.10938-0.4375 0.10938-0.65625 0.21875-1.6406 0.54688-3.2812 0.76562-4.9219 0.76562s-3.1719-0.21875-4.9219-0.76562c-0.21875-0.10938-0.32812-0.10938-0.54688-0.21875-53.484-20.344-71.422-59.5-65.516-89.25z" />
+                    </g>
           </svg>
           <span className="text-xs font-medium">
             {isInCart(pet) ? "Remove" : "Add"}
@@ -110,7 +113,7 @@ export const PetCard = ({ pet, onDelete, onEdit }: PetCardProps) => {
           <svg
             aria-hidden="true"
             focusable="false"
-            className="w-5 h-5 fill-current"
+            className="w-4 h-4 fill-current "
             role="img"
             viewBox="0 0 512 512"
           >
@@ -154,16 +157,15 @@ export const PetCard = ({ pet, onDelete, onEdit }: PetCardProps) => {
 
         {/* More & Delete */}
         <div className="flex items-center justify-start mb-2">
-        <Link
-  to={`/pets/?species=${pet.species}`}
-  className="inline-flex items-center mr-3 px-3 py-2 text-sm font-medium text-white bg-slate-500 rounded-lg hover:bg-slate-800"
->
-  {"More " + multipleSpeciesStringConverter(pet.species)}
-</Link>
+          <Link
+            to={`/pets/?species=${pet.species}`}
+            className="inline-flex items-center mr-3 px-3 py-2 text-sm font-medium text-white bg-slate-500 rounded-lg hover:bg-slate-800"
+          >
+            {"More " + multipleSpeciesStringConverter(pet.species)}
+          </Link>
 
-
-          {/* Delete Button + "Are you sure?" */}
-          {!showConfirm && (
+          {/* Only show Delete button if user owns the pet */}
+          {canDelete && !showConfirm && (
             <button
               className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-800"
               onClick={handleDeleteClick}
@@ -171,9 +173,13 @@ export const PetCard = ({ pet, onDelete, onEdit }: PetCardProps) => {
               Delete
             </button>
           )}
-          {showConfirm && (
+
+          {/* "Are you sure?" Confirm prompt */}
+          {canDelete && showConfirm && (
             <div className="flex items-center space-x-2">
-              <span className="text-sm font-medium text-gray-800">Are you sure?</span>
+              <span className="text-sm font-medium text-gray-800">
+                Are you sure?
+              </span>
               <button
                 className="px-3 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-800"
                 onClick={confirmDelete}

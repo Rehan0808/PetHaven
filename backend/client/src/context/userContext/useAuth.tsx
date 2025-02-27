@@ -67,9 +67,12 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
       setLoading(true);
       setError(undefined);
       loginUser(loginUserData)
-        .then((data) => {
-          setUser(data.user);
-          setMessage(data.message);
+      .then((data) => {
+        setUser({
+          ...data.user,
+          token: data.token // Ensure this matches your API response
+        });
+        
           setTimeout(() => {
             setMessage(undefined);
             navigate("/users/my-account");
