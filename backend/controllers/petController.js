@@ -4,23 +4,18 @@ const Pet = require("../models/pet");
 const adoptionModel = require("../models/adoption"); // If you have an adoption model
 const sequelize = require("../config/sequelize"); // If you need transactions, etc.
 
-/**
- * Helper: Build dynamic WHERE clause for filterPets
- */
+// Helper: Build dynamic WHERE clause for filterPets
 const buildSequelizeWhereClause = (queryParams) => {
   const where = {};
   for (const [key, value] of Object.entries(queryParams)) {
     if (["sort", "page", "limit"].includes(key)) continue;
 
     if (key === "species") {
-      // handle species array or exact match
       const speciesArray = Array.isArray(value) ? value : [value];
       where.species = { [Op.in]: speciesArray };
     } else if (key === "age") {
-      // For simplicity, just do exact match
       where.age = +value;
     } else {
-      // Fallback exact match
       where[key] = value;
     }
   }
@@ -34,14 +29,15 @@ exports.filterPets = async (req, res) => {
   try {
     const where = buildSequelizeWhereClause(req.query);
 
-    // Sorting
     let order = [];
     if (req.query.sort) {
       const [field, orderDir] = req.query.sort.split(",");
-      order.push([field, orderDir && orderDir.toUpperCase() === "DESC" ? "DESC" : "ASC"]);
+      order.push([
+        field,
+        orderDir && orderDir.toUpperCase() === "DESC" ? "DESC" : "ASC",
+      ]);
     }
 
-    // Pagination
     const limit = parseInt(req.query.limit) || 6;
     const page = parseInt(req.query.page) || 1;
     const offset = (page - 1) * limit;
@@ -85,32 +81,37 @@ exports.getPet = async (req, res) => {
 
 /**
  * ADD a new pet (with optional image)
- * Called by POST /api/v1/pets (petsRoutes.js with upload.single("image"))
+ * Called by POST /api/v1/pets
  */
 exports.addPet = async (req, res) => {
   try {
     const { name, species, age, fee, description, gender, zip, town } = req.body;
-
-    // If using Multer, req.file holds file info
     const imageFilename = req.file ? req.file.filename : null;
 
-    // Parse numeric fields
     const parsedAge = parseInt(age, 10) || 0;
     const parsedFee = parseFloat(fee) || 0;
     const parsedZip = zip ? parseInt(zip, 10) : null;
 
+    // If you require user to be logged in:
+    const ownerId = req.user ? req.user.id : null;
+    if (!ownerId) {
+      return res.status(401).json({
+        error: "No user ID found in request. Are you logged in?",
+      });
+    }
+
     // Create the new Pet record
     const newPet = await Pet.create({
       name,
-      species, // 'dog', 'cat', etc. (lowercase if your model expects that)
+      species,
       age: parsedAge,
       fee: parsedFee,
       description,
-      gender, // 'male' or 'female'
+      gender,
       zip: parsedZip,
       town,
       image: imageFilename,
-      // 'adopted' defaults to false in your model
+      owner_id: ownerId, // Assign to the logged-in user
     });
 
     return res.status(201).json({
@@ -136,14 +137,10 @@ exports.updatePet = async (req, res) => {
       return res.status(404).json({ error: "Pet not found" });
     }
 
-    // 1) If using Multer, req.file holds the new file (or undefined if none)
-    //    Keep old image if none is uploaded
     const imageFilename = req.file ? req.file.filename : pet.image;
 
-    // 2) Extract fields from req.body
     let { name, species, age, fee, description, gender, zip, town } = req.body;
 
-    // 3) Convert species/gender to lowercase if needed (like addPet does)
     if (species) {
       species = species.toLowerCase();
     }
@@ -151,12 +148,10 @@ exports.updatePet = async (req, res) => {
       gender = gender.toLowerCase();
     }
 
-    // 4) Parse numeric fields or fallback to old values
     const parsedAge = age ? parseInt(age, 10) : pet.age;
     const parsedFee = fee ? parseFloat(fee) : pet.fee;
     const parsedZip = zip ? parseInt(zip, 10) : null;
 
-    // 5) Update only the fields we have; fallback to old fields if undefined
     await pet.update({
       name: name ?? pet.name,
       species: species ?? pet.species,
@@ -190,8 +185,16 @@ exports.deletePet = async (req, res) => {
     if (!pet) {
       return res.status(404).json({ error: "Pet not found" });
     }
+
+    // Check ownership before deleting
+    if (!req.user || (pet.owner_id && pet.owner_id !== req.user.id)) {
+      return res.status(403).json({
+        error: "You do not own this pet",
+      });
+    }
+
     await pet.destroy();
-    res.status(200).json({
+    return res.status(200).json({
       msg: "Pet deleted successfully",
       deletedPet: pet,
     });
@@ -212,13 +215,11 @@ exports.adoptPet = async (req, res) => {
     const { userId } = req.body;
     const petId = req.params.id;
 
-    // If you use a transaction:
     await sequelize.transaction(async (t) => {
       const pet = await Pet.findByPk(petId, { transaction: t });
       if (!pet) {
         throw new Error("Pet not found");
       }
-      // Mark pet as adopted
       await pet.update({ adopted: true }, { transaction: t });
 
       // If you have an adoption model:
