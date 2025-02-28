@@ -1,7 +1,7 @@
 // controllers/userController.js
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const { User, findUserByEmail, createUser } = require("../models/user");
+const { User } = require("../models"); // Import the instantiated model with static methods attached
 require("dotenv").config();
 
 /**
@@ -12,8 +12,8 @@ exports.registration = async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
-    // 1) Check if user already exists by email
-    const existingUser = await findUserByEmail(email);
+    // 1) Check if user already exists by email using the static method on User
+    const existingUser = await User.findUserByEmail(email);
     if (existingUser) {
       return res.status(400).json({
         success: false,
@@ -23,7 +23,7 @@ exports.registration = async (req, res) => {
 
     // 2) Hash password and create user
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = await createUser({
+    const newUser = await User.createUser({
       username,
       email,
       password: hashedPassword,
@@ -37,12 +37,10 @@ exports.registration = async (req, res) => {
     );
 
     // 4) Set the token in a cookie
-    // sameSite: "none" is important if your frontend is on a different port/domain
-    // secure: false for local HTTP dev; set to true in production if using HTTPS
     res.cookie("token", token, {
       httpOnly: true,
-      secure: false,
-      sameSite: "none",
+      secure: false, // change to true in production if using HTTPS
+      sameSite: "lax",
       maxAge: 60 * 60 * 1000, // 1 hour in ms
     });
 
@@ -67,13 +65,12 @@ exports.registration = async (req, res) => {
 
 /**
  * POST /login
- * (Unchanged - it already sets the cookie)
  */
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const user = await findUserByEmail(email);
+    const user = await User.findUserByEmail(email);
     if (!user) {
       return res.status(401).json({
         success: false,

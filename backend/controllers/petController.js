@@ -1,15 +1,14 @@
 // controllers/petController.js
 const { Op } = require("sequelize");
-const Pet = require("../models/pet");
-const adoptionModel = require("../models/adoption"); // If you have an adoption model
-const sequelize = require("../config/sequelize"); // If you need transactions, etc.
+const { Pet, Adoption, sequelize } = require("../models");
 
-// Helper: Build dynamic WHERE clause for filterPets
+/**
+ * Helper: Build dynamic WHERE clause for filterPets.
+ */
 const buildSequelizeWhereClause = (queryParams) => {
   const where = {};
   for (const [key, value] of Object.entries(queryParams)) {
     if (["sort", "page", "limit"].includes(key)) continue;
-
     if (key === "species") {
       const speciesArray = Array.isArray(value) ? value : [value];
       where.species = { [Op.in]: speciesArray };
@@ -22,13 +21,9 @@ const buildSequelizeWhereClause = (queryParams) => {
   return where;
 };
 
-/**
- * GET and filter pets with pagination & sorting
- */
-exports.filterPets = async (req, res) => {
+const filterPets = async (req, res) => {
   try {
     const where = buildSequelizeWhereClause(req.query);
-
     let order = [];
     if (req.query.sort) {
       const [field, orderDir] = req.query.sort.split(",");
@@ -37,18 +32,15 @@ exports.filterPets = async (req, res) => {
         orderDir && orderDir.toUpperCase() === "DESC" ? "DESC" : "ASC",
       ]);
     }
-
     const limit = parseInt(req.query.limit) || 6;
     const page = parseInt(req.query.page) || 1;
     const offset = (page - 1) * limit;
-
     const result = await Pet.findAndCountAll({
       where,
       order,
       limit,
       offset,
     });
-
     return res.status(200).json({
       data: result.rows,
       totalPetsResults: result.count,
@@ -61,10 +53,7 @@ exports.filterPets = async (req, res) => {
   }
 };
 
-/**
- * GET a single pet by ID
- */
-exports.getPet = async (req, res) => {
+const getPet = async (req, res) => {
   try {
     const pet = await Pet.findByPk(req.params.id);
     if (!pet) {
@@ -79,28 +68,19 @@ exports.getPet = async (req, res) => {
   }
 };
 
-/**
- * ADD a new pet (with optional image)
- * Called by POST /api/v1/pets
- */
-exports.addPet = async (req, res) => {
+const addPet = async (req, res) => {
   try {
     const { name, species, age, fee, description, gender, zip, town } = req.body;
     const imageFilename = req.file ? req.file.filename : null;
-
     const parsedAge = parseInt(age, 10) || 0;
     const parsedFee = parseFloat(fee) || 0;
     const parsedZip = zip ? parseInt(zip, 10) : null;
-
-    // If you require user to be logged in:
     const ownerId = req.user ? req.user.id : null;
     if (!ownerId) {
       return res.status(401).json({
         error: "No user ID found in request. Are you logged in?",
       });
     }
-
-    // Create the new Pet record
     const newPet = await Pet.create({
       name,
       species,
@@ -111,9 +91,8 @@ exports.addPet = async (req, res) => {
       zip: parsedZip,
       town,
       image: imageFilename,
-      owner_id: ownerId, // Assign to the logged-in user
+      owner_id: ownerId,
     });
-
     return res.status(201).json({
       msg: "Pet added successfully",
       pet: newPet,
@@ -127,31 +106,19 @@ exports.addPet = async (req, res) => {
   }
 };
 
-/**
- * UPDATE a pet by ID
- */
-exports.updatePet = async (req, res) => {
+const updatePet = async (req, res) => {
   try {
     const pet = await Pet.findByPk(req.params.id);
     if (!pet) {
       return res.status(404).json({ error: "Pet not found" });
     }
-
     const imageFilename = req.file ? req.file.filename : pet.image;
-
     let { name, species, age, fee, description, gender, zip, town } = req.body;
-
-    if (species) {
-      species = species.toLowerCase();
-    }
-    if (gender) {
-      gender = gender.toLowerCase();
-    }
-
+    if (species) species = species.toLowerCase();
+    if (gender) gender = gender.toLowerCase();
     const parsedAge = age ? parseInt(age, 10) : pet.age;
     const parsedFee = fee ? parseFloat(fee) : pet.fee;
     const parsedZip = zip ? parseInt(zip, 10) : null;
-
     await pet.update({
       name: name ?? pet.name,
       species: species ?? pet.species,
@@ -163,7 +130,6 @@ exports.updatePet = async (req, res) => {
       town: town ?? pet.town,
       image: imageFilename,
     });
-
     return res.status(200).json({
       msg: "Updated successfully",
       pet,
@@ -176,23 +142,17 @@ exports.updatePet = async (req, res) => {
   }
 };
 
-/**
- * DELETE a pet by ID
- */
-exports.deletePet = async (req, res) => {
+const deletePet = async (req, res) => {
   try {
     const pet = await Pet.findByPk(req.params.id);
     if (!pet) {
       return res.status(404).json({ error: "Pet not found" });
     }
-
-    // Check ownership before deleting
     if (!req.user || (pet.owner_id && pet.owner_id !== req.user.id)) {
       return res.status(403).json({
         error: "You do not own this pet",
       });
     }
-
     await pet.destroy();
     return res.status(200).json({
       msg: "Pet deleted successfully",
@@ -206,25 +166,17 @@ exports.deletePet = async (req, res) => {
   }
 };
 
-/**
- * ADOPT a pet
- * Example usage: POST /api/v1/pets/:id/adopt with { userId }
- */
-exports.adoptPet = async (req, res) => {
+const adoptPet = async (req, res) => {
   try {
     const { userId } = req.body;
     const petId = req.params.id;
-
     await sequelize.transaction(async (t) => {
       const pet = await Pet.findByPk(petId, { transaction: t });
       if (!pet) {
         throw new Error("Pet not found");
       }
       await pet.update({ adopted: true }, { transaction: t });
-
-      // If you have an adoption model:
-      const adoption = await adoptionModel.createAdoption(userId, petId, t);
-
+      const adoption = await Adoption.createAdoption(userId, petId, t);
       res.status(200).json({
         success: true,
         message: "Pet adopted successfully",
@@ -238,4 +190,13 @@ exports.adoptPet = async (req, res) => {
       details: error.message,
     });
   }
+};
+
+module.exports = {
+  filterPets,
+  getPet,
+  addPet,
+  updatePet,
+  deletePet,
+  adoptPet,
 };
