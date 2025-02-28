@@ -1,105 +1,111 @@
-// src/services/api.tsx
-
+import axios from "axios";
 import { json } from "react-router-dom";
 import { RegisterUser, LoginUser } from "../types";
 
-/** 
- * Fetch all pets 
- * If your /api/v1/pets route requires being logged in, add credentials: "include".
- * If it's public, you can omit it. But if you see "no data" due to 401 errors,
- * add credentials: "include" so the cookie is sent.
+/**
+ * GET all pets
  */
 export const fetchPets = async () => {
   const query = window.location.search;
-  const res = await fetch(`http://localhost:8001/api/v1/pets${query}`, {
-    credentials: "include", // <== add if route is protected or you need the session
-  });
-
-  if (!res.ok) {
-    // This triggers the errorElement in your Route config
+  try {
+    const response = await axios.get(`/api/v1/pets${query}`, {
+      withCredentials: true,
+    });
+    return response.data;
+  } catch (err) {
     throw json({ message: "No pets available." }, { status: 500 });
   }
-
-  const data = await res.json();
-  return data;
 };
 
-// Fetch one pet
+/**
+ * GET one pet by ID
+ */
 export const fetchPet = async ({ params }: { params: any }) => {
-  const id = params.id;
-  const res = await fetch(`http://localhost:8001/api/v1/pets/${id}`, {
-    credentials: "include", // <== same reasoning
-  });
-
-  if (!res.ok) {
+  try {
+    const id = params.id;
+    const response = await axios.get(`/api/v1/pets/${id}`, {
+      withCredentials: true,
+    });
+    return response.data;
+  } catch (err) {
     throw json({ message: "Pet not found." }, { status: 404 });
   }
-
-  return await res.json();
 };
 
-// Register user
+/**
+ * ADD a new pet (multipart/form-data if image is included)
+ */
+export const addPet = async (formData: FormData) => {
+  try {
+    const response = await axios.post("/api/v1/pets", formData, {
+      withCredentials: true,
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  } catch (err: any) {
+    return { error: err.response?.data?.message || "Failed to add pet" };
+  }
+};
+
+
+/**
+ * REGISTER user
+ */
 export const registerUser = async (user: RegisterUser) => {
-  console.log("Registering user:", user);
-
-  const res = await fetch("http://localhost:8001/api/v1/users/register", {
-    method: "POST",
-    headers: { "Content-type": "application/json" },
-    body: JSON.stringify(user),
-    credentials: "include", // <== keep this for session-based auth
-  });
-
-  console.log("Response Status:", res.status);
-
-  const data = await res.json();
-  console.log("Response Data:", data);
-
-  if (res.status !== 201) {
-    // Expecting 201 for successful creation
-    return Promise.reject(data.message);
+  try {
+    const response = await axios.post("/api/v1/users/register", user, {
+      withCredentials: true,
+      headers: { "Content-Type": "application/json" },
+    });
+    return response.data;
+  } catch (err: any) {
+    return { error: err.response?.data?.message || "Server error during registration" };
   }
-  return data;
 };
 
-// Login user
+/**
+ * LOGIN user
+ */
 export const loginUser = async (user: LoginUser) => {
-  const res = await fetch("http://localhost:8001/api/v1/users/login", {
-    method: "POST",
-    headers: { "Content-type": "application/json" },
-    body: JSON.stringify(user),
-    credentials: "include", // <== ADD THIS to store the session cookie
-  });
-
-  // If not 200, throw an error
-  if (res.status !== 200) {
-    const data = await res.json();
-    return Promise.reject(data.message);
-  } else {
-    const data = await res.json();
-    return data;
+  try {
+    const response = await axios.post("/api/v1/users/login", user, {
+      withCredentials: true,
+      headers: { "Content-Type": "application/json" },
+    });
+    return response.data;
+  } catch (err: any) {
+    return { error: err.response?.data?.message || "Login failed" };
   }
 };
 
-// Get current user session
+/**
+ * GET current user session
+ */
 export const getUser = async () => {
-  const res = await fetch("http://localhost:8001/api/v1/users/isUserAuth", {
-    credentials: "include",
-    headers: { "Content-type": "application/json" },
-  });
-  if (res.status !== 200) {
-    const data = await res.json();
-    return Promise.reject(data.message);
+  try {
+    const response = await axios.get("/api/v1/users/isUserAuth", {
+      withCredentials: true,
+      headers: { "Content-Type": "application/json" },
+    });
+    return response.data;
+  } catch (err: any) {
+    return { error: err.response?.data?.message || "Failed to get user session" };
   }
-  const data = await res.json();
-  return data;
 };
 
-// Logout user
+/**
+ * LOGOUT user
+ */
 export const logoutUser = async () => {
-  const res = await fetch("http://localhost:8001/api/v1/users/logout", {
-    credentials: "include",
-    headers: { "Content-type": "application/json" },
-  });
-  const data = await res.json();
-  return data;
+  try {
+    const response = await axios.get("/api/v1/users/logout", {
+      withCredentials: true,
+      headers: { "Content-Type": "application/json" },
+    });
+    return response.data;
+  } catch (err: any) {
+    return { error: err.response?.data?.message || "Logout failed" };
+  }
 };

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import useAuth from "../../context/userContext/useAuth";
+import { addPet } from "../../services/api";
 
 interface AddPetModalProps {
   onClose: () => void;
@@ -8,6 +9,7 @@ interface AddPetModalProps {
 
 const AddPetModal: React.FC<AddPetModalProps> = ({ onClose, onPetAdded }) => {
   const auth = useAuth();
+
   const [formData, setFormData] = useState({
     name: "",
     species: "Dog",
@@ -18,9 +20,9 @@ const AddPetModal: React.FC<AddPetModalProps> = ({ onClose, onPetAdded }) => {
     zip: "",
     town: "",
   });
-
   const [imageFile, setImageFile] = useState<File | null>(null);
 
+  // Handle text/select inputs
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
@@ -28,62 +30,45 @@ const AddPetModal: React.FC<AddPetModalProps> = ({ onClose, onPetAdded }) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Handle file input (if user chooses an image)
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       setImageFile(e.target.files[0]);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    console.log(">>> handleSubmit called.");
-    console.log(">>> Current formData:", formData);
-    console.log(">>> Current imageFile:", imageFile);
-
-    // Convert species & gender to lowercase for your model
+  // Dedicated function called when user clicks "Submit"
+  const handleAddPet = async () => {
+    // Convert species & gender to lowercase to match your model validation
     const adjustedData = {
       ...formData,
       species: formData.species.toLowerCase(),
       gender: formData.gender.toLowerCase(),
     };
 
-    // Create FormData object
+    // Build a FormData object (Multer-friendly)
     const dataToSend = new FormData();
     Object.entries(adjustedData).forEach(([key, value]) => {
       dataToSend.append(key, String(value));
     });
-
     if (imageFile) {
       dataToSend.append("image", imageFile);
     }
 
     try {
-      // If you want, you can check if user is logged in:
       if (!auth.user) {
         throw new Error("Authentication required. Please log in first.");
       }
 
-      // NOTE: No Authorization header. We rely on cookies only.
-      const response = await fetch("http://localhost:8001/api/v1/pets", {
-        method: "POST",
-        body: dataToSend,
-        credentials: "include", // This ensures cookies are sent
-      });
+      // `addPet` in api.tsx expects FormData
+      const responseData = await addPet(dataToSend);
 
-      const responseData = await response.json();
-      console.log(">>> Server response:", responseData);
-
-      if (!response.ok) {
-        throw new Error(responseData.error || responseData.message || "Failed to add pet");
-      }
-
-      // Successfully added
+      // If successful, notify parent component and close modal
       onPetAdded(responseData.pet || responseData);
       onClose();
-    } catch (err) {
+    } catch (err: any) {
       console.error("Submission error:", err);
-      alert(`Error: ${(err as Error).message}`);
+      console.log(`Error adding pet: ${err.message || "Failed to add pet"}`);
     }
   };
 
@@ -100,11 +85,7 @@ const AddPetModal: React.FC<AddPetModalProps> = ({ onClose, onPetAdded }) => {
 
         <h2 className="text-lg font-bold text-center mb-2">Add a New Pet</h2>
 
-        <form
-          onSubmit={handleSubmit}
-          encType="multipart/form-data"
-          className="grid grid-cols-3 gap-2"
-        >
+        <div className="grid grid-cols-3 gap-2">
           {/* Name */}
           <div className="flex flex-col">
             <label className="font-medium text-gray-700">Name</label>
@@ -236,13 +217,14 @@ const AddPetModal: React.FC<AddPetModalProps> = ({ onClose, onPetAdded }) => {
               Cancel
             </button>
             <button
-              type="submit"
+              type="button"
+              onClick={handleAddPet}
               className="bg-blue-500 hover:bg-blue-600 text-black px-3 py-1 rounded-md"
             >
               Submit
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );

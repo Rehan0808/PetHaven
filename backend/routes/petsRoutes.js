@@ -1,34 +1,38 @@
 // routes/petsRoutes.js
-
 const express = require("express");
 const router = express.Router();
+// const multer = require("multer");
 const petController = require("../controllers/petController");
 const upload = require("../middleware/upload");
 
-// NEW: Import your auth middleware
-const authMiddleware = require("../middleware/auth");
+
+// const upload = multer({ dest: "uploads/" }); // or your own config
+
+router.post("/", upload.single("image"), petController.addPet);
+// ...
+module.exports = router;
+// Destructure the authenticate function from the auth module
+const { authenticate } = require("../middleware/auth");
 
 // Route to adopt a pet by ID
 router.route("/:id/adopt").post(petController.adoptPet);
 
-// Test route (just to confirm server is running)
+// Test route to confirm pet routes are active
 router.get("/test", (req, res) => {
   res.send("Pet route testing.");
 });
 
-// Main pet routes – attach upload.single("image") for file uploads on POST
+// Main pet routes: GET for filtering, POST for adding a new pet (with image upload)
 router
   .route("/")
   .get(petController.filterPets)
-  // Use authMiddleware here so req.user is set in addPet
-  .post(authMiddleware, upload.single("image"), petController.addPet);
+  .post(authenticate, upload.single("image"), petController.addPet);
 
-// Single pet operations by ID
+// Routes for operations on a single pet (by ID)
 router
   .route("/:id")
   .get(petController.getPet)
   .put(upload.single("image"), petController.updatePet)
-  // Use authMiddleware here so req.user is set in deletePet
-  .delete(authMiddleware, petController.deletePet);
+  .delete(authenticate, petController.deletePet);
 
 module.exports = router;
