@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react"; 
 import axios from "axios";
 import { Link } from "react-router-dom";
 
@@ -85,7 +85,7 @@ export const Donation = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center p-4">
+    <div className="flex flex-col items-center justify-center p-4 bg-[#F7F9FA] min-h-screen text-[#333333]">
       <div className="flex items-center space-x-2">
         <h1 className="text-3xl font-bold text-center">Make a Donation</h1>
         <button onClick={() => setShowForm((prev) => !prev)} aria-label="Toggle form">
@@ -95,7 +95,7 @@ export const Donation = () => {
             viewBox="0 0 24 24"
             strokeWidth={2}
             stroke="currentColor"
-            className="w-6 h-6 text-gray-700 hover:text-gray-900 transition-colors"
+            className="w-6 h-6 text-[#2C3E50] hover:text-[#34495e] transition-colors"
           >
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
           </svg>
@@ -103,18 +103,35 @@ export const Donation = () => {
       </div>
 
       <h2 className="text-2xl font-bold mt-8 mb-6">Donation Campaign</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-6xl">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-6xl">
         {donationCampaigns.map((campaign) => {
           const imageSrc = campaign.localPreview || (campaign.serverImagePath ? `/${campaign.serverImagePath}` : null);
           return (
-            <div key={campaign.id} className="bg-gray-800 text-white rounded shadow hover:shadow-lg transition-shadow w-80 mx-auto">
-              {imageSrc && <img src={imageSrc} alt={campaign.petName} className="w-full h-64 object-cover" />}
+            <div 
+              key={campaign.id} 
+              className="bg-white text-[#333333] rounded-lg shadow-md hover:shadow-xl transition-shadow w-80 mx-auto border border-[#2C3E50]"
+            >
+              {imageSrc && (
+                <img 
+                  src={imageSrc} 
+                  alt={campaign.petName} 
+                  className="w-full h-64 object-cover rounded-t-lg" 
+                />
+              )}
               <div className="p-4">
-                <h3 className="text-xl font-semibold mb-2">{campaign.petName}</h3>
-                <p className="text-sm text-gray-300 mb-1">Date: {campaign.lastDate}</p>
-                <p className="text-sm text-gray-300 mb-1">Donation Amount: {campaign.maxDonation}</p>
+                <h3 className="text-xl font-semibold mb-2 text-[#2C3E50]">
+                  {campaign.petName}
+                </h3>
+                <p className="text-sm mb-1">
+                  Date: {campaign.lastDate}
+                </p>
+                <p className="text-sm mb-1">
+                  Donation Amount: {campaign.maxDonation}
+                </p>
                 <Link to={`/donation/${campaign.id}`}>
-                  <button className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 mt-3 rounded font-bold">View Details</button>
+                  <button className="bg-[#E67E22] hover:bg-[#cf6e1d] text-white px-4 py-2 mt-3 rounded font-bold">
+                    View Details
+                  </button>
                 </Link>
               </div>
             </div>
@@ -125,21 +142,82 @@ export const Donation = () => {
       {showForm && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="absolute inset-0" onClick={() => setShowForm(false)} />
-          <form onClick={(e) => e.stopPropagation()} onSubmit={handleSubmit} className="relative bg-gray-800 p-6 rounded shadow text-white w-full max-w-lg z-50">
-            <h2 className="text-lg font-semibold mb-4">Create Donation Campaign</h2>
+          <form 
+            onClick={(e) => e.stopPropagation()} 
+            onSubmit={handleSubmit} 
+            className="relative bg-white p-6 rounded shadow text-[#333333] w-full max-w-lg z-50"
+          >
+            <h2 className="text-lg font-semibold mb-4 text-[#2C3E50]">
+              Create Donation Campaign
+            </h2>
 
-            <input type="text" value={petName} onChange={(e) => setPetName(e.target.value)} className="w-full px-2 py-1 rounded text-black text-sm mb-3" placeholder="Pet Name" required />
-            <input type="number" value={maxDonation} onChange={(e) => setMaxDonation(e.target.value)} className="w-full px-2 py-1 rounded text-black text-sm mb-3" placeholder="Donation Amount" required />
-            <input type="text" value={lastDate} onChange={(e) => setLastDate(e.target.value)} className="w-full px-2 py-1 rounded text-black text-sm mb-3" placeholder="Date (MM/DD/YYYY)" required />
-            <input type="text" value={shortInfo} onChange={(e) => setShortInfo(e.target.value)} className="w-full px-2 py-1 rounded text-black text-sm mb-3" placeholder="Short Info" required />
-            <textarea value={longDescription} onChange={(e) => setLongDescription(e.target.value)} className="w-full px-2 py-1 rounded text-black text-sm mb-3" placeholder="Long Description" rows={3} required />
+            <input 
+              type="text" 
+              value={petName} 
+              onChange={(e) => setPetName(e.target.value)} 
+              className="w-full px-2 py-1 rounded border border-[#2C3E50] text-[#333333] text-sm mb-3" 
+              placeholder="Pet Name" 
+              required 
+            />
+            <input 
+              type="number" 
+              value={maxDonation} 
+              onChange={(e) => setMaxDonation(e.target.value)} 
+              className="w-full px-2 py-1 rounded border border-[#2C3E50] text-[#333333] text-sm mb-3" 
+              placeholder="Donation Amount" 
+              required 
+            />
+            <input 
+              type="text" 
+              value={lastDate} 
+              onChange={(e) => setLastDate(e.target.value)} 
+              className="w-full px-2 py-1 rounded border border-[#2C3E50] text-[#333333] text-sm mb-3" 
+              placeholder="Date (MM/DD/YYYY)" 
+              required 
+            />
+            <input 
+              type="text" 
+              value={shortInfo} 
+              onChange={(e) => setShortInfo(e.target.value)} 
+              className="w-full px-2 py-1 rounded border border-[#2C3E50] text-[#333333] text-sm mb-3" 
+              placeholder="Short Info" 
+              required 
+            />
+            <textarea 
+              value={longDescription} 
+              onChange={(e) => setLongDescription(e.target.value)} 
+              className="w-full px-2 py-1 rounded border border-[#2C3E50] text-[#333333] text-sm mb-3" 
+              placeholder="Long Description" 
+              rows={3} 
+              required 
+            />
 
-            <input type="file" accept="image/*" onChange={handleFileChange} className="block w-full text-sm text-gray-900 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer mb-3" />
-            {selectedFile && <p className="mt-1 text-xs">File chosen: <strong>{selectedFile.name}</strong></p>}
+            <input 
+              type="file" 
+              accept="image/*" 
+              onChange={handleFileChange} 
+              className="block w-full text-sm text-[#333333] file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer mb-3" 
+            />
+            {selectedFile && (
+              <p className="mt-1 text-xs">
+                File chosen: <strong>{selectedFile.name}</strong>
+              </p>
+            )}
 
             <div className="flex justify-end space-x-2 mt-4">
-              <button type="button" onClick={() => setShowForm(false)} className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded text-sm font-bold">Cancel</button>
-              <button type="submit" className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm font-bold">Add Donation Campaign</button>
+              <button 
+                type="button" 
+                onClick={() => setShowForm(false)} 
+                className="bg-[#2C3E50] hover:bg-[#34495e] text-white px-3 py-1 rounded text-sm font-bold"
+              >
+                Cancel
+              </button>
+              <button 
+                type="submit" 
+                className="bg-[#E67E22] hover:bg-[#cf6e1d] text-white px-3 py-1 rounded text-sm font-bold"
+              >
+                Add Donation Campaign
+              </button>
             </div>
           </form>
         </div>

@@ -64,16 +64,8 @@ export const DonationDetail = () => {
   // Handle submission of the donation form
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Here you can call an API endpoint to process the donation:
-    // axios.post("/api/v1/donations/submit", {
-    //   donorName,
-    //   donorEmail,
-    //   donorPhone,
-    //   donorAddress,
-    //   donationAmount,
-    //   campaignId: id,
-    // })
+    // Example: You might call an API endpoint here to process the donation
+    // axios.post("/api/v1/donations/submit", { ... })
 
     console.log("Donation form submitted with:", {
       donorName,
@@ -93,7 +85,7 @@ export const DonationDetail = () => {
       setShowSuccess(false);
     }, 3000);
 
-    // Optionally clear the form fields
+    // Clear the form fields
     setDonorName("");
     setDonorEmail("");
     setDonorPhone("");
@@ -102,7 +94,7 @@ export const DonationDetail = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-4 relative">
+    <div className="bg-[#F7F9FA] min-h-screen p-4 text-[#333333]">
       {/* Fixed Success Message in the center with a cross icon */}
       {showSuccess && (
         <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-green-500 text-white px-6 py-3 rounded shadow z-50 flex items-center space-x-4">
@@ -122,44 +114,61 @@ export const DonationDetail = () => {
         </div>
       )}
 
-      {/* Top Section: Image + Basic Info */}
-      <div className="flex flex-col md:flex-row items-center md:items-start md:space-x-6">
-        {imageSrc && (
-          <img
-            src={imageSrc}
-            alt={campaign.pet_name}
-            className="w-full md:w-1/2 h-auto object-cover rounded shadow mb-4 md:mb-0"
-          />
-        )}
-        <div>
-          <h1 className="text-3xl font-bold mb-2">{campaign.pet_name}</h1>
-          <p className="text-red-500 text-xl font-semibold mb-2">
-            Needed donation amount: ${campaign.max_donation}
-          </p>
-          <p className="text-gray-600 text-sm mb-4">Date: {campaign.last_date}</p>
+      <div className="max-w-4xl mx-auto">
+        {/* Card Container */}
+        <div className="bg-white rounded-lg shadow-md p-6">
+          {/* Top Section: Image + Basic Info */}
+          <div className="flex flex-col md:flex-row md:space-x-6">
+            {imageSrc && (
+              <img
+                src={imageSrc}
+                alt={campaign.pet_name}
+                className="w-full md:w-1/2 h-auto object-cover rounded-lg shadow mb-4 md:mb-0"
+              />
+            )}
+            <div className="md:w-1/2">
+              <h1 className="text-3xl font-bold text-[#2C3E50] mb-2">
+                {campaign.pet_name}
+              </h1>
+              <p className="text-xl font-semibold text-[#E67E22] mb-2">
+                Needed donation amount: ${campaign.max_donation}
+              </p>
+              <p className="text-sm text-[#333333] mb-4">
+                <span className="font-medium">Date:</span> {campaign.last_date}
+              </p>
+            </div>
+          </div>
+
+          {/* Short Info */}
+          <div className="mt-6">
+            <h2 className="text-xl font-semibold text-[#2C3E50] mb-2">
+              Short Information About Donation
+            </h2>
+            <p className="bg-[#f2f2f2] text-[#333333] p-3 rounded">
+              {campaign.short_info}
+            </p>
+          </div>
+
+          {/* Long Description */}
+          <div className="mt-6">
+            <h2 className="text-xl font-semibold text-[#2C3E50] mb-2">
+              Long Description About Donation
+            </h2>
+            <p className="bg-[#f2f2f2] text-[#333333] p-3 rounded">
+              {campaign.long_description}
+            </p>
+          </div>
+
+          {/* Donate Now Button */}
+          <div className="mt-6">
+            <button
+              onClick={() => setShowModal(true)}
+              className="bg-[#E67E22] hover:bg-[#cf6e1d] text-white px-6 py-2 rounded font-bold"
+            >
+              Donate Now
+            </button>
+          </div>
         </div>
-      </div>
-
-      {/* Short Info */}
-      <div className="mt-6">
-        <h2 className="text-xl font-semibold mb-2">Short Information About Donation</h2>
-        <p className="text-gray-200 bg-gray-800 p-2 rounded">{campaign.short_info}</p>
-      </div>
-
-      {/* Long Description */}
-      <div className="mt-6">
-        <h2 className="text-xl font-semibold mb-2">Long Description About Donation</h2>
-        <p className="text-gray-200 bg-gray-800 p-2 rounded">{campaign.long_description}</p>
-      </div>
-
-      {/* Donate Now Button */}
-      <div className="mt-6">
-        <button
-          onClick={() => setShowModal(true)}
-          className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded font-bold"
-        >
-          Donate Now
-        </button>
       </div>
 
       {/* Donation Modal (shows when showModal === true) */}
@@ -171,9 +180,11 @@ export const DonationDetail = () => {
           <form
             onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
             onSubmit={handleSubmit}
-            className="relative bg-gray-800 p-6 rounded shadow text-white w-full max-w-md z-50"
+            className="relative bg-white p-6 rounded shadow text-[#333333] w-full max-w-md z-50"
           >
-            <h2 className="text-lg font-semibold mb-4">Donation Form</h2>
+            <h2 className="text-lg font-semibold mb-4 text-[#2C3E50]">
+              Donation Form
+            </h2>
 
             <div className="mb-3">
               <label className="block text-sm mb-1">Your Name</label>
@@ -181,7 +192,7 @@ export const DonationDetail = () => {
                 type="text"
                 value={donorName}
                 onChange={(e) => setDonorName(e.target.value)}
-                className="w-full px-2 py-1 rounded text-black text-sm"
+                className="w-full px-2 py-1 rounded border border-[#2C3E50] text-sm"
                 placeholder="Your Name"
                 required
               />
@@ -193,7 +204,7 @@ export const DonationDetail = () => {
                 type="email"
                 value={donorEmail}
                 onChange={(e) => setDonorEmail(e.target.value)}
-                className="w-full px-2 py-1 rounded text-black text-sm"
+                className="w-full px-2 py-1 rounded border border-[#2C3E50] text-sm"
                 placeholder="Your Email"
                 required
               />
@@ -205,7 +216,7 @@ export const DonationDetail = () => {
                 type="tel"
                 value={donorPhone}
                 onChange={(e) => setDonorPhone(e.target.value)}
-                className="w-full px-2 py-1 rounded text-black text-sm"
+                className="w-full px-2 py-1 rounded border border-[#2C3E50] text-sm"
                 placeholder="Your Phone Number"
                 required
               />
@@ -217,7 +228,7 @@ export const DonationDetail = () => {
                 type="text"
                 value={donorAddress}
                 onChange={(e) => setDonorAddress(e.target.value)}
-                className="w-full px-2 py-1 rounded text-black text-sm"
+                className="w-full px-2 py-1 rounded border border-[#2C3E50] text-sm"
                 placeholder="Your Address"
                 required
               />
@@ -229,7 +240,7 @@ export const DonationDetail = () => {
                 type="number"
                 value={donationAmount}
                 onChange={(e) => setDonationAmount(e.target.value)}
-                className="w-full px-2 py-1 rounded text-black text-sm"
+                className="w-full px-2 py-1 rounded border border-[#2C3E50] text-sm"
                 placeholder="Enter Donation Amount"
                 required
               />
@@ -239,13 +250,13 @@ export const DonationDetail = () => {
               <button
                 type="button"
                 onClick={() => setShowModal(false)}
-                className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded text-sm font-bold"
+                className="bg-[#2C3E50] hover:bg-[#34495e] text-white px-3 py-1 rounded text-sm font-bold"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm font-bold"
+                className="bg-[#E67E22] hover:bg-[#cf6e1d] text-white px-3 py-1 rounded text-sm font-bold"
               >
                 Submit Donation
               </button>

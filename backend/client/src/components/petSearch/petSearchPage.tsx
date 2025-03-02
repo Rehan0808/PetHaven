@@ -132,10 +132,7 @@ export const PetSearchPage: React.FC = () => {
   const pageList = Array.from({ length: totalPages }, (_, i) => (i + 1).toString());
 
   return (
-    <div className="container mx-auto px-4">
-      {/* Debug Header */}
-      {/* <h1 style={{ color: "red" }}>DEBUG: PetSearchPage Loaded</h1> */}
-
+    <div className="container mx-auto px-4 bg-[#F7F9FA] text-[#333333] min-h-screen">
       <SearchBar
         speciesQuery={searchParams.get("species") || ""}
         sortQuery={searchParams.get("sort") || ""}
@@ -145,7 +142,7 @@ export const PetSearchPage: React.FC = () => {
       />
 
       {loading ? (
-        <p className="text-center">Loading pets...</p>
+        <p className="text-center mt-4">Loading pets...</p>
       ) : pets && pets.data.length ? (
         <ul className="flex flex-wrap justify-evenly gap-x-1 gap-y-7 my-5">
           {pets.data.map((pet) => (
@@ -191,13 +188,13 @@ export const PetSearchPage: React.FC = () => {
             <p className="mb-4">You must be logged in to add or delete a pet.</p>
             <div className="flex justify-center space-x-4">
               <button
-                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+                className="px-4 py-2 bg-[#2C3E50] text-white rounded hover:bg-[#34495e]"
                 onClick={() => setShowLoginPrompt(false)}
               >
                 Close
               </button>
               <button
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                className="px-4 py-2 bg-[#E67E22] text-white rounded hover:bg-[#cf6e1d]"
                 onClick={() => {
                   setShowLoginPrompt(false);
                   navigate("/users/login");

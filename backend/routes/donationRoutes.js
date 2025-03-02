@@ -1,9 +1,13 @@
+// backend/routes/donationRoutes.js
+
 const express = require("express");
 const router = express.Router();
 const multer = require("multer");
+const dayjs = require("dayjs"); // <-- NEW
 
 // Require the Sequelize model for donation campaigns
-const DonationCampaign = require("../models/donationCampaign");
+// NOTE: If you have a models/index.js, adjust import accordingly
+const DonationCampaign = require("../models").DonationCampaign;
 
 // Multer setup for handling file uploads
 const storage = multer.diskStorage({
@@ -31,13 +35,26 @@ router.get("/", async (req, res) => {
 // POST new campaign (with optional image)
 router.post("/", upload.single("image"), async (req, res) => {
   try {
-    const { petName, maxDonation, lastDate, shortInfo, longDescription } = req.body;
-    let imagePath = req.file ? req.file.path : null;
+    const {
+      petName,
+      maxDonation,
+      lastDate: userEnteredDate, // rename for clarity
+      shortInfo,
+      longDescription,
+    } = req.body;
+
+    // If user typed date like "22/2/2025", parse it into "YYYY-MM-DD"
+    // dayjs("22/2/2025", "D/M/YYYY") => "2025-02-22"
+    const parsedDate = dayjs(userEnteredDate, "D/M/YYYY").isValid()
+      ? dayjs(userEnteredDate, "D/M/YYYY").format("YYYY-MM-DD")
+      : userEnteredDate; // fallback if it’s already in YYYY-MM-DD
+
+    const imagePath = req.file ? req.file.path : null;
 
     const newCampaign = await DonationCampaign.create({
       pet_name: petName,
       max_donation: maxDonation,
-      last_date: lastDate,
+      last_date: parsedDate,
       short_info: shortInfo,
       long_description: longDescription,
       image_path: imagePath,

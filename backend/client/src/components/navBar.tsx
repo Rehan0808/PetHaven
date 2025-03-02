@@ -11,7 +11,7 @@ export const Navbar = () => {
 
   return (
     <>
-      <nav className="relative flex flex-wrap items-center justify-between px-2 py-3 bg-gray-800">
+      <nav className="relative flex flex-wrap items-center justify-between px-2 py-3 bg-[#2C3E50]">
         {message && location.pathname !== "/users/login" ? (
           <div
             className="fixed w-1/2 inset-x-0 max-w-max mx-auto top-1 transition-opacity ease-in duration-300 bg-opacity-80 bg-green-100 rounded-lg py-1 px-2 text-base text-green-700"
@@ -45,11 +45,16 @@ export const Navbar = () => {
             id="example-navbar-danger"
           >
             <ul className="flex flex-col lg:flex-row list-none lg:ml-auto">
-              {/* 
-                Removed the entire <li> block for "About the App" here.
-                Everything else stays the same.
-              */}
-
+              {/* Home Link - Added */}
+              <li className="nav-item">
+                <NavLink
+                  onClick={() => setNavbarOpen(false)}
+                  className="px-3 py-2 flex items-center text-s font-bold leading-snug text-white hover:no-underline"
+                  to="/"
+                >
+                  <span className="ml-2">Home</span>
+                </NavLink>
+              </li>
               <li className="nav-item">
                 <NavLink
                   onClick={() => setNavbarOpen(false)}
@@ -177,7 +182,7 @@ export const Navbar = () => {
                     </g>
                   </svg>
                   {cartItems.length > 0 && (
-                    <span className="w-5 h-5 rounded-full flex justify-center items-center -ml-3 -mt-6 leading-none text-center whitespace-nowrap bg-red-600 text-white text-xs">
+                    <span className="w-5 h-5 rounded-full flex justify-center items-center -ml-3 -mt-6 leading-none text-center whitespace-nowrap bg-[#E67E22] text-white text-xs">
                       {cartItems.length}
                     </span>
                   )}
