@@ -1,5 +1,5 @@
 import { useContext, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import CartContext from "../../context/cartContext/cartContext";
 import { multipleSpeciesStringConverter } from "../helpers";
 import { Pet } from "../../types";
@@ -8,27 +8,24 @@ import useAuth from "../../context/userContext/useAuth";
 interface PetCardProps {
   pet: Pet;
   onDelete: (id: string) => void; // Parent callback for deletion
-  onEdit: (pet: Pet) => void;     // For edit
+  onEdit: (pet: Pet) => void;     // For editing
 }
 
 export const PetCard = ({ pet, onDelete, onEdit }: PetCardProps) => {
   const { cartItems, addToCart, removeFromCart } = useContext(CartContext);
-  const { user } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth(); 
+  // "user" is truthy if logged in, otherwise undefined/null
 
   // Check if the pet is in the cart
   const isInCart = (p: Pet) => cartItems.some((item) => item.id === p.id);
 
-  // Determine if this user can delete (owns the pet)
-  const canDelete = user && pet.owner_id === user.id;
+  // Only show the Delete button if user is logged in
+  const canDelete = !!user;
 
-  // "Are you sure?" for Delete
+  // "Are you sure?" confirm for Delete
   const [showConfirm, setShowConfirm] = useState(false);
   const handleDeleteClick = () => {
-    if (!user) {
-      setShowLoginPrompt(true);
-      return;
-    }
+    if (!user) return; // just a safety check
     setShowConfirm(true);
   };
 
@@ -44,26 +41,27 @@ export const PetCard = ({ pet, onDelete, onEdit }: PetCardProps) => {
 
   const cancelDelete = () => setShowConfirm(false);
 
-  // Login prompt modal
-  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
-
-  // Toggle cart
+  // Basket add/remove
   const handleCartClick = () => {
-    if (!user) {
-      setShowLoginPrompt(true);
-      return;
-    }
+    // You can also block cart behind login if you want:
+    // if (!user) { ... } else { ... }
     isInCart(pet) ? removeFromCart(pet) : addToCart(pet);
   };
 
-  // Edit click
+  // Edit
   const handleEditClick = () => {
-    if (!user) {
-      setShowLoginPrompt(true);
-      return;
-    }
+    // If you want to block editing behind login, you can do:
+    // if (!user) { ... } else { onEdit(pet); }
     onEdit(pet);
   };
+
+  // Calculate days on site
+  const daysOnSite = pet.dateAddedToSite
+    ? Math.floor(
+        (Date.now() - new Date(pet.dateAddedToSite).getTime()) /
+          (1000 * 60 * 60 * 24)
+      )
+    : "N/A";
 
   return (
     <li className="max-w-sm md:w-2/5 bg-white border border-gray-200 rounded-lg shadow">
@@ -163,7 +161,7 @@ export const PetCard = ({ pet, onDelete, onEdit }: PetCardProps) => {
             {"More " + multipleSpeciesStringConverter(pet.species)}
           </Link>
 
-          {/* Only show Delete button if user owns the pet */}
+          {/* Show Delete only if user is logged in */}
           {canDelete && !showConfirm && (
             <button
               className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-[#E67E22] rounded-lg hover:bg-[#cf6e1d]"
@@ -173,7 +171,7 @@ export const PetCard = ({ pet, onDelete, onEdit }: PetCardProps) => {
             </button>
           )}
 
-          {/* "Are you sure?" Confirm prompt */}
+          {/* "Are you sure?" confirm prompt */}
           {canDelete && showConfirm && (
             <div className="flex items-center space-x-2">
               <span className="text-sm font-medium text-[#333333]">
@@ -195,33 +193,6 @@ export const PetCard = ({ pet, onDelete, onEdit }: PetCardProps) => {
           )}
         </div>
       </div>
-
-      {/* If user not logged in, show "Please login" modal */}
-      {showLoginPrompt && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded shadow-md max-w-sm mx-auto text-center">
-            <h2 className="text-xl font-bold mb-4">Please Login or Register</h2>
-            <p className="mb-4">You must be logged in to perform this action.</p>
-            <div className="flex justify-center space-x-4">
-              <button
-                className="px-4 py-2 bg-[#2C3E50] text-white rounded hover:bg-[#34495e]"
-                onClick={() => setShowLoginPrompt(false)}
-              >
-                Close
-              </button>
-              <button
-                className="px-4 py-2 bg-[#E67E22] text-white rounded hover:bg-[#cf6e1d]"
-                onClick={() => {
-                  setShowLoginPrompt(false);
-                  navigate("/users/login");
-                }}
-              >
-                Login
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </li>
   );
 };

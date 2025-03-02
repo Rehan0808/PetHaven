@@ -8,7 +8,6 @@ const { Pet, Adoption, sequelize } = require("../models");
 const buildSequelizeWhereClause = (queryParams) => {
   const where = {};
   for (const [key, value] of Object.entries(queryParams)) {
-    // Skip these keys if they're sort/pagination
     if (["sort", "page", "limit"].includes(key)) continue;
 
     if (key === "species") {
@@ -25,13 +24,12 @@ const buildSequelizeWhereClause = (queryParams) => {
 
 /**
  * GET /api/v1/pets
- * Returns an object shaped { pets, count } so your React code sees pets and count
+ * Return { pets, count }
  */
 const filterPets = async (req, res) => {
   try {
     const where = buildSequelizeWhereClause(req.query);
 
-    // Sorting
     let order = [];
     if (req.query.sort) {
       const [field, orderDir] = req.query.sort.split(",");
@@ -41,12 +39,10 @@ const filterPets = async (req, res) => {
       ]);
     }
 
-    // Pagination defaults
     const limit = parseInt(req.query.limit) || 10;
     const page = parseInt(req.query.page) || 1;
     const offset = (page - 1) * limit;
 
-    // Sequelize's findAndCountAll
     const result = await Pet.findAndCountAll({
       where,
       order,
@@ -54,10 +50,9 @@ const filterPets = async (req, res) => {
       offset,
     });
 
-    // Return { pets, count } to match your petSearchPage expectations
     return res.status(200).json({
-      pets: result.rows,     // array of pet objects
-      count: result.count,   // total number of matching pets
+      pets: result.rows,
+      count: result.count,
     });
   } catch (err) {
     console.error("Error fetching pets:", err);
@@ -89,13 +84,12 @@ const getPet = async (req, res) => {
 
 /**
  * POST /api/v1/pets
- * If user is logged in (optionalAuth), sets owner_id = req.user.id, else null
+ * ANYONE can add a pet
  */
 const addPet = async (req, res) => {
   try {
     let { name, species, age, fee, description, gender, zip, town } = req.body;
 
-    // Convert to lowercase for validation
     species = species.toLowerCase();
     gender = gender.toLowerCase();
 
@@ -103,9 +97,6 @@ const addPet = async (req, res) => {
     const parsedAge = parseInt(age, 10) || 0;
     const parsedFee = parseFloat(fee) || 0;
     const parsedZip = zip ? parseInt(zip, 10) : null;
-
-    // If user is logged in, req.user is set by optionalAuth
-    const ownerId = req.user ? req.user.id : null;
 
     const newPet = await Pet.create({
       name,
@@ -117,7 +108,6 @@ const addPet = async (req, res) => {
       zip: parsedZip,
       town,
       image: imageFilename,
-      owner_id: ownerId,
     });
 
     return res.status(201).json({
@@ -134,7 +124,44 @@ const addPet = async (req, res) => {
 };
 
 /**
+ * DELETE /api/v1/pets/:id
+ * 
+ * If you want to require the user to be logged in, you can check `req.user`.
+ * Otherwise, remove the check below. 
+ * For example:
+ * if (!req.user) { return res.status(401).json({ error: "Not logged in" }); }
+ * 
+ * But we do NOT check ownership, so any logged-in user can delete any pet.
+ */
+const deletePet = async (req, res) => {
+  try {
+    // Optionally check if the user is logged in:
+    // if (!req.user) {
+    //   return res.status(401).json({ error: "You must be logged in" });
+    // }
+
+    const pet = await Pet.findByPk(req.params.id);
+    if (!pet) {
+      return res.status(404).json({ error: "Pet not found" });
+    }
+
+    await pet.destroy();
+    return res.status(200).json({
+      msg: "Pet deleted successfully",
+      deletedPet: pet,
+    });
+  } catch (err) {
+    console.error("Error deleting pet:", err);
+    res.status(500).json({
+      error: "Deletion failed",
+      message: err.message,
+    });
+  }
+};
+
+/**
  * PUT /api/v1/pets/:id
+ * ANYONE can update
  */
 const updatePet = async (req, res) => {
   try {
@@ -144,7 +171,6 @@ const updatePet = async (req, res) => {
     }
 
     const imageFilename = req.file ? req.file.filename : pet.image;
-
     let { name, species, age, fee, description, gender, zip, town } = req.body;
 
     if (species) species = species.toLowerCase();
@@ -180,30 +206,6 @@ const updatePet = async (req, res) => {
 };
 
 /**
- * DELETE /api/v1/pets/:id
- */
-const deletePet = async (req, res) => {
-  try {
-    const pet = await Pet.findByPk(req.params.id);
-    if (!pet) {
-      return res.status(404).json({ error: "Pet not found" });
-    }
-
-    await pet.destroy();
-    return res.status(200).json({
-      msg: "Pet deleted successfully",
-      deletedPet: pet,
-    });
-  } catch (err) {
-    console.error("Error deleting pet:", err);
-    res.status(500).json({
-      error: "Deletion failed",
-      message: err.message,
-    });
-  }
-};
-
-/**
  * POST /api/v1/pets/:id/adopt
  */
 const adoptPet = async (req, res) => {
@@ -217,13 +219,11 @@ const adoptPet = async (req, res) => {
       }
       await pet.update({ adopted: true }, { transaction: t });
 
-      // If you have an Adoption model, you can handle it here
-      // e.g., const adoption = await Adoption.createAdoption(userId, petId, t);
+      // If you have an Adoption model, handle it here
 
       res.status(200).json({
         success: true,
         message: "Pet adopted successfully",
-        // adoption,
       });
     });
   } catch (error) {
@@ -240,7 +240,7 @@ module.exports = {
   filterPets,
   getPet,
   addPet,
-  updatePet,
   deletePet,
+  updatePet,
   adoptPet,
 };

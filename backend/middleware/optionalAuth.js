@@ -1,10 +1,13 @@
 // backend/middleware/optionalAuth.js
+// If you want to require the user to be logged in on the server side for delete,
+// you can do router.delete("/:id", optionalAuth, petController.deletePet);
+// then in deletePet, check if (!req.user)...
+
 const jwt = require("jsonwebtoken");
 const { User } = require("../models");
 
 exports.optionalAuth = async (req, res, next) => {
   try {
-    // read "Authorization" header
     const authHeader = req.header("Authorization") || "";
     let token = "";
 
@@ -30,7 +33,7 @@ exports.optionalAuth = async (req, res, next) => {
       req.user = user;
     }
   } catch (err) {
-    // If invalid/expired token, do nothing
+    // do nothing if invalid/expired token
   }
   next();
 };
