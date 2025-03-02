@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react"; 
 import axios from "axios";
 import { Link } from "react-router-dom";
+import useAuth from "../../context/userContext/useAuth"; // <-- Import your auth hook
 
 export const Donation = () => {
+  const { user } = useAuth(); // <-- Check if user is logged in
   const [showForm, setShowForm] = useState(false);
   const [petName, setPetName] = useState("");
   const [maxDonation, setMaxDonation] = useState("");
@@ -44,7 +46,6 @@ export const Donation = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     try {
       const formData = new FormData();
       formData.append("petName", petName);
@@ -72,6 +73,7 @@ export const Donation = () => {
         },
       ]);
 
+      // Reset form
       setPetName("");
       setMaxDonation("");
       setLastDate("");
@@ -81,6 +83,21 @@ export const Donation = () => {
       setShowForm(false);
     } catch (err) {
       console.error("Error creating donation campaign:", err);
+    }
+  };
+
+  // DELETE handler
+  const handleDelete = async (campaignId: number) => {
+    // Optionally, confirm with user:
+    if (!window.confirm("Are you sure you want to delete this campaign?")) {
+      return;
+    }
+
+    try {
+      await axios.delete(`/api/v1/donations/${campaignId}`);
+      setDonationCampaigns((prev) => prev.filter((c) => c.id !== campaignId));
+    } catch (err) {
+      console.error("Error deleting donation campaign:", err);
     }
   };
 
@@ -105,7 +122,10 @@ export const Donation = () => {
       <h2 className="text-2xl font-bold mt-8 mb-6">Donation Campaign</h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-6xl">
         {donationCampaigns.map((campaign) => {
-          const imageSrc = campaign.localPreview || (campaign.serverImagePath ? `/${campaign.serverImagePath}` : null);
+          const imageSrc =
+            campaign.localPreview ||
+            (campaign.serverImagePath ? `/${campaign.serverImagePath}` : null);
+
           return (
             <div 
               key={campaign.id} 
@@ -129,10 +149,20 @@ export const Donation = () => {
                   Donation Amount: {campaign.maxDonation}
                 </p>
                 <Link to={`/donation/${campaign.id}`}>
-                  <button className="bg-[#E67E22] hover:bg-[#cf6e1d] text-white px-4 py-2 mt-3 rounded font-bold">
+                  <button className="bg-[#E67E22] hover:bg-[#cf6e1d] text-white px-4 py-2 mt-3 rounded font-bold mr-2">
                     View Details
                   </button>
                 </Link>
+
+                {/* Show Delete button ONLY if user is logged in */}
+                {user && (
+                  <button
+                    onClick={() => handleDelete(campaign.id)}
+                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 mt-3 rounded font-bold"
+                  >
+                    Delete
+                  </button>
+                )}
               </div>
             </div>
           );
