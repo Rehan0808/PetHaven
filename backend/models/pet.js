@@ -1,6 +1,4 @@
 // backend/models/pet.js
-const { DataTypes } = require("sequelize");
-
 module.exports = (sequelize, DataTypes) => {
   const Pet = sequelize.define(
     "Pet",
@@ -44,7 +42,8 @@ module.exports = (sequelize, DataTypes) => {
           isIn: [["male", "female"]],
         },
       },
-      date_added_to_site: {
+      dateAddedToSite: {
+        field: "date_added_to_site", // actual DB column name
         type: DataTypes.DATE,
         allowNull: false,
         defaultValue: DataTypes.NOW,
@@ -62,11 +61,12 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         defaultValue: false,
       },
+      // Now we store the user who created the pet:
       owner_id: {
         type: DataTypes.INTEGER,
         allowNull: true,
         references: {
-          model: "users", // The table name in your DB
+          model: "users", // your "users" table
           key: "id",
         },
         onUpdate: "CASCADE",
@@ -78,11 +78,6 @@ module.exports = (sequelize, DataTypes) => {
       timestamps: false,
     }
   );
-
-  // Optionally, define associations here:
-  // Pet.associate = (models) => {
-  //   Pet.belongsTo(models.User, { foreignKey: 'owner_id' });
-  // };
 
   return Pet;
 };

@@ -1,5 +1,4 @@
 // backend/models/user.js
-const { DataTypes } = require("sequelize");
 
 module.exports = (sequelize, DataTypes) => {
   const User = sequelize.define(
@@ -36,7 +35,11 @@ module.exports = (sequelize, DataTypes) => {
     }
   );
 
-  // Static methods attached to the model
+  /**
+   * Static method: findUserByEmail
+   * @param {string} email - User's email
+   * @returns {Promise<User | null>} - User instance or null
+   */
   User.findUserByEmail = async function (email) {
     try {
       return await this.findOne({ where: { email } });
@@ -46,6 +49,11 @@ module.exports = (sequelize, DataTypes) => {
     }
   };
 
+  /**
+   * Static method: createUser
+   * @param {Object} userData - { username, email, password }
+   * @returns {Promise<User>} - Newly created User instance
+   */
   User.createUser = async function (userData) {
     try {
       return await this.create(userData);

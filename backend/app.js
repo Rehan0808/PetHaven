@@ -3,7 +3,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
-const cookieParser = require("cookie-parser");
+const cookieParser = require("cookie-parser"); // optional, not used if no cookies
 const path = require("path");
 
 const petRouter = require("./routes/petsRoutes");
@@ -12,16 +12,18 @@ const donationRouter = require("./routes/donationRoutes");
 
 const app = express();
 
+// If purely header-based, you don't strictly need credentials: true
+// but let's keep a simple CORS config to allow requests from React
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:3000",
-    credentials: true,
+    origin: "http://localhost:3000",
+    credentials: false, // No cookie usage needed
   })
 );
 
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
+app.use(cookieParser()); // harmless if you keep it
 
 // Serve static files
 app.use(express.static(path.join(__dirname, "client/build")));
@@ -47,7 +49,6 @@ app.get("*", (req, res) => {
 app.use((err, req, res, next) => {
   console.error("Global error handler:", err);
 
-  // If you're using ErrorResponse, check for custom fields:
   if (err.statusCode && err.errorCode && err.message) {
     return res.status(err.statusCode).json({
       error: err.errorCode,
@@ -55,7 +56,6 @@ app.use((err, req, res, next) => {
     });
   }
 
-  // Otherwise, default to 500:
   res.status(500).json({
     error: "server_error",
     message: err.message || "Internal Server Error",

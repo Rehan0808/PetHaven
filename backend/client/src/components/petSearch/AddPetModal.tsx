@@ -1,5 +1,5 @@
+// client/src/components/petSearch/AddPetModal.tsx
 import React, { useState } from "react";
-import useAuth from "../../context/userContext/useAuth";
 import { addPet } from "../../services/api";
 
 interface AddPetModalProps {
@@ -8,8 +8,6 @@ interface AddPetModalProps {
 }
 
 const AddPetModal: React.FC<AddPetModalProps> = ({ onClose, onPetAdded }) => {
-  const auth = useAuth();
-
   const [formData, setFormData] = useState({
     name: "",
     species: "Dog",
@@ -22,53 +20,39 @@ const AddPetModal: React.FC<AddPetModalProps> = ({ onClose, onPetAdded }) => {
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
 
-  // Handle text/select inputs
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Handle file input (if user chooses an image)
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       setImageFile(e.target.files[0]);
     }
   };
 
-  // Dedicated function called when user clicks "Submit"
   const handleAddPet = async () => {
-    // Convert species & gender to lowercase to match your model validation
-    const adjustedData = {
-      ...formData,
-      species: formData.species.toLowerCase(),
-      gender: formData.gender.toLowerCase(),
-    };
-
-    // Build a FormData object (Multer-friendly)
-    const dataToSend = new FormData();
-    Object.entries(adjustedData).forEach(([key, value]) => {
-      dataToSend.append(key, String(value));
-    });
-    if (imageFile) {
-      dataToSend.append("image", imageFile);
-    }
-
     try {
-      if (!auth.user) {
-        throw new Error("Authentication required. Please log in first.");
+      const dataToSend = new FormData();
+      Object.entries(formData).forEach(([key, value]) => {
+        dataToSend.append(key, String(value));
+      });
+      if (imageFile) {
+        dataToSend.append("image", imageFile);
       }
 
-      // `addPet` in api.tsx expects FormData
       const responseData = await addPet(dataToSend);
-
-      // If successful, notify parent component and close modal
-      onPetAdded(responseData.pet || responseData);
-      onClose();
+      if (responseData.error) {
+        console.error("Failed to add pet:", responseData.error);
+        alert(responseData.error);
+      } else {
+        // server returns { msg, pet }
+        onPetAdded(responseData.pet);
+        onClose();
+      }
     } catch (err: any) {
       console.error("Submission error:", err);
-      console.log(`Error adding pet: ${err.message || "Failed to add pet"}`);
+      alert(err.message || "Failed to add pet");
     }
   };
 
@@ -82,7 +66,6 @@ const AddPetModal: React.FC<AddPetModalProps> = ({ onClose, onPetAdded }) => {
         >
           &times;
         </button>
-
         <h2 className="text-lg font-bold text-center mb-2">Add a New Pet</h2>
 
         <div className="grid grid-cols-3 gap-2">

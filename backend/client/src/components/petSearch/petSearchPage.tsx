@@ -1,3 +1,5 @@
+// src/components/petSearch/petSearchPage.tsx
+
 import queryString from "query-string";
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
@@ -13,20 +15,17 @@ export const PetSearchPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  // Main pet data
-  const [pets, setPets] = useState<{ data: Pet[]; totalPetsResults: number } | null>(null);
+  // Main pet data now expects keys "pets" (array) and "count" (total number)
+  const [pets, setPets] = useState<{ pets: Pet[]; count: number } | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Existing Add Pet modal
+  // Modals
   const [showAddModal, setShowAddModal] = useState(false);
-
-  // For editing
   const [showEditModal, setShowEditModal] = useState(false);
   const [petToEdit, setPetToEdit] = useState<Pet | null>(null);
 
-  // Auth checks
+  // Auth context (if needed)
   const { user } = useAuth();
-  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
   // Update URL query params
   const updateSearchParams = (key: string, value: string) => {
@@ -46,10 +45,22 @@ export const PetSearchPage: React.FC = () => {
 
         const result = await response.json();
         console.log("Fetched pets:", result);
-
-        setPets(result);
+        
+        // Ensure result has the expected structure
+        if (result && typeof result === 'object') {
+          // Make sure pets is always an array even if the API returns null/undefined
+          const normalizedResult = {
+            pets: Array.isArray(result.pets) ? result.pets : [],
+            count: typeof result.count === 'number' ? result.count : 0
+          };
+          setPets(normalizedResult);
+        } else {
+          console.error("Unexpected API response format:", result);
+          setPets({ pets: [], count: 0 });
+        }
       } catch (error) {
         console.error("Error fetching pets:", error);
+        setPets({ pets: [], count: 0 });
       } finally {
         setLoading(false);
       }
@@ -58,21 +69,17 @@ export const PetSearchPage: React.FC = () => {
     fetchPets();
   }, [searchParams]);
 
-  // Add Pet
+  /**
+   * Add Pet
+   */
   const handleAddPet = () => {
-    if (!user) {
-      setShowLoginPrompt(true);
-      return;
-    }
     setShowAddModal(true);
   };
 
-  // Delete Pet
+  /**
+   * Delete Pet
+   */
   const handleDeletePet = async (petId: string) => {
-    if (!user) {
-      setShowLoginPrompt(true);
-      return;
-    }
     if (!window.confirm("Are you sure you want to delete this pet?")) return;
 
     try {
@@ -82,11 +89,11 @@ export const PetSearchPage: React.FC = () => {
       if (!response.ok) throw new Error("Failed to delete pet");
 
       setPets((prev) => {
-        if (!prev) return null;
+        if (!prev) return { pets: [], count: 0 };
         return {
           ...prev,
-          data: prev.data.filter((pet) => pet.id.toString() !== petId),
-          totalPetsResults: prev.totalPetsResults - 1,
+          pets: prev.pets.filter((pet) => pet.id.toString() !== petId),
+          count: prev.count - 1,
         };
       });
     } catch (error) {
@@ -94,16 +101,16 @@ export const PetSearchPage: React.FC = () => {
     }
   };
 
-  // New pet added
+  // Called after a new pet is successfully added
   const handlePetAdded = (newPet: Pet) => {
     setPets((prev) =>
       prev
         ? {
             ...prev,
-            data: [newPet, ...prev.data],
-            totalPetsResults: prev.totalPetsResults + 1,
+            pets: [newPet, ...prev.pets],
+            count: prev.count + 1,
           }
-        : { data: [newPet], totalPetsResults: 1 }
+        : { pets: [newPet], count: 1 }
     );
   };
 
@@ -118,21 +125,20 @@ export const PetSearchPage: React.FC = () => {
     setShowEditModal(false);
     setPetToEdit(null);
 
-    // Merge updated pet in state
     setPets((prev) => {
       if (!prev) return null;
-      const newData = prev.data.map((p) => (p.id === updatedPet.id ? updatedPet : p));
-      return { ...prev, data: newData };
+      const newData = prev.pets.map((p) => (p.id === updatedPet.id ? updatedPet : p));
+      return { ...prev, pets: newData };
     });
   };
 
-  // Pagination
-  const totalPages = Math.ceil((pets?.totalPetsResults || 1) / 10);
+  // Pagination: using "count" from the backend for total results
+  const totalPages = Math.ceil((pets?.count || 0) / 10);
   const currentPage = Number(searchParams.get("page")) || 1;
-  const pageList = Array.from({ length: totalPages }, (_, i) => (i + 1).toString());
+  const pageList = Array.from({ length: totalPages || 1 }, (_, i) => (i + 1).toString());
 
   return (
-    <div className="container mx-auto px-4 bg-[#F7F9FA] text-[#333333] min-h-screen">
+    <div className="container mx-auto px-4">
       <SearchBar
         speciesQuery={searchParams.get("species") || ""}
         sortQuery={searchParams.get("sort") || ""}
@@ -142,10 +148,10 @@ export const PetSearchPage: React.FC = () => {
       />
 
       {loading ? (
-        <p className="text-center mt-4">Loading pets...</p>
-      ) : pets && pets.data.length ? (
+        <p className="text-center">Loading pets...</p>
+      ) : pets && pets.pets && pets.pets.length > 0 ? (
         <ul className="flex flex-wrap justify-evenly gap-x-1 gap-y-7 my-5">
-          {pets.data.map((pet) => (
+          {pets.pets.map((pet) => (
             <PetCard key={pet.id} pet={pet} onDelete={handleDeletePet} onEdit={onEditPet} />
           ))}
         </ul>
@@ -178,33 +184,6 @@ export const PetSearchPage: React.FC = () => {
           onClose={() => setShowEditModal(false)}
           onPetUpdated={handlePetUpdated}
         />
-      )}
-
-      {/* If user not logged in and tries "Add Pet," show login prompt */}
-      {showLoginPrompt && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded shadow-md max-w-sm mx-auto text-center">
-            <h2 className="text-xl font-bold mb-4">Please Login or Register</h2>
-            <p className="mb-4">You must be logged in to add or delete a pet.</p>
-            <div className="flex justify-center space-x-4">
-              <button
-                className="px-4 py-2 bg-[#2C3E50] text-white rounded hover:bg-[#34495e]"
-                onClick={() => setShowLoginPrompt(false)}
-              >
-                Close
-              </button>
-              <button
-                className="px-4 py-2 bg-[#E67E22] text-white rounded hover:bg-[#cf6e1d]"
-                onClick={() => {
-                  setShowLoginPrompt(false);
-                  navigate("/users/login");
-                }}
-              >
-                Login
-              </button>
-            </div>
-          </div>
-        </div>
       )}
     </div>
   );

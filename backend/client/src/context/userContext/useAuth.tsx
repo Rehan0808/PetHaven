@@ -26,18 +26,21 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
   const [loading, setLoading] = useState<boolean>(false);
   const [loadingInitial, setLoadingInitial] = useState<boolean>(true);
 
-  // Because AuthProvider is inside RouterProvider, these hooks work now
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Clear error on route change
   useEffect(() => {
     if (error) setError(undefined);
   }, [location.pathname, error]);
 
+  // On mount, attempt to get user from the server
   useEffect(() => {
     getUser()
       .then((data) => {
-        setUser(data.user);
+        if (data?.user) {
+          setUser(data.user);
+        }
       })
       .catch((_error) => {})
       .finally(() => setLoadingInitial(false));
@@ -49,12 +52,16 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
       setError(undefined);
       registerUser(newUser)
         .then((data) => {
-          setUser(data.user);
-          setMessage(data.message);
-          setTimeout(() => {
-            setMessage(undefined);
-            navigate("/users/login");
-          }, 2000);
+          if (data.user) {
+            setUser(data.user);
+            setMessage(data.message);
+            setTimeout(() => {
+              setMessage(undefined);
+              navigate("/users/login");
+            }, 2000);
+          } else {
+            setError(data.error || "Registration failed");
+          }
         })
         .catch((err) => setError(err?.message || String(err)))
         .finally(() => setLoading(false));
@@ -67,16 +74,25 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
       setLoading(true);
       setError(undefined);
       loginUser(loginUserData)
-      .then((data) => {
-        setUser({
-          ...data.user,
-          token: data.token // Ensure this matches your API response
-        });
-        
-          setTimeout(() => {
-            setMessage(undefined);
-            navigate("/users/my-account");
-          }, 2000);
+        .then((data) => {
+          if (data.success) {
+            // store token in localStorage
+            if (data.token) {
+              localStorage.setItem("authToken", data.token);
+            }
+            setUser({
+              id: data.user.id,
+              username: data.user.username,
+              email: data.user.email,
+            });
+            setMessage(data.message);
+            setTimeout(() => {
+              setMessage(undefined);
+              navigate("/users/my-account");
+            }, 2000);
+          } else {
+            setError(data.error || "Login failed");
+          }
         })
         .catch((err) => setError(err?.message || String(err)))
         .finally(() => setLoading(false));
@@ -86,6 +102,9 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
 
   const logout = useCallback(() => {
     logoutUser().then((data) => {
+      // remove token from localStorage
+      localStorage.removeItem("authToken");
+
       setUser(undefined);
       setMessage(data.message);
       setTimeout(() => {

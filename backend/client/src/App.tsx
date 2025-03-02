@@ -14,7 +14,7 @@ import { LoginFrom } from "./components/user/loginForm";
 import { MyAccount } from "./components/user/myAccount";
 import { CartPage } from "./components/checkout/cartPage";
 import { CheckoutPage } from "./components/checkout/checkoutPage";
-// import { About } from "./components/about";
+import { About } from "./components/about";
 import { Donation } from "./components/donation/Donation";
 import { DonationDetail } from "./components/donation/DonationDetail";
 
@@ -37,7 +37,7 @@ const router = createBrowserRouter([
           { path: "/users/my-account", element: <MyAccount /> },
           { path: "/cart", element: <CartPage /> },
           { path: "/checkout", element: <CheckoutPage /> },
-          // { path: "/about", element: <About /> },
+          { path: "/about", element: <About /> },
           { path: "/donation", element: <Donation /> },
           { path: "/donation/:id", element: <DonationDetail /> },
         ],
