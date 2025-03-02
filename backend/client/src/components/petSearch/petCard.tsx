@@ -1,5 +1,5 @@
 import { useContext, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import CartContext from "../../context/cartContext/cartContext";
 import { multipleSpeciesStringConverter } from "../helpers";
 import { Pet } from "../../types";
@@ -7,28 +7,23 @@ import useAuth from "../../context/userContext/useAuth";
 
 interface PetCardProps {
   pet: Pet;
-  onDelete: (id: string) => void; // Parent callback for deletion
-  onEdit: (pet: Pet) => void;     // For editing
+  onDelete: (id: string) => void; 
+  onEdit: (pet: Pet) => void;     
 }
 
 export const PetCard = ({ pet, onDelete, onEdit }: PetCardProps) => {
   const { cartItems, addToCart, removeFromCart } = useContext(CartContext);
-  const { user } = useAuth(); 
-  // "user" is truthy if logged in, otherwise undefined/null
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   // Check if the pet is in the cart
   const isInCart = (p: Pet) => cartItems.some((item) => item.id === p.id);
 
-  // Only show the Delete button if user is logged in
-  const canDelete = !!user;
-
-  // "Are you sure?" confirm for Delete
+  // Show/hide "Are you sure?" for Delete
   const [showConfirm, setShowConfirm] = useState(false);
   const handleDeleteClick = () => {
-    if (!user) return; // just a safety check
     setShowConfirm(true);
   };
-
   const confirmDelete = () => {
     setShowConfirm(false);
     const petId = pet.id?.toString();
@@ -38,24 +33,28 @@ export const PetCard = ({ pet, onDelete, onEdit }: PetCardProps) => {
     }
     onDelete(petId);
   };
-
   const cancelDelete = () => setShowConfirm(false);
 
-  // Basket add/remove
+  // If user not logged in and they click the basket icon => show "Please Login"
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const handleCartClick = () => {
-    // You can also block cart behind login if you want:
-    // if (!user) { ... } else { ... }
+    if (!user) {
+      setShowLoginPrompt(true);
+      return;
+    }
     isInCart(pet) ? removeFromCart(pet) : addToCart(pet);
   };
 
-  // Edit
+  // For editing
   const handleEditClick = () => {
-    // If you want to block editing behind login, you can do:
-    // if (!user) { ... } else { onEdit(pet); }
+    if (!user) {
+      setShowLoginPrompt(true);
+      return;
+    }
     onEdit(pet);
   };
 
-  // Calculate days on site
+  // Days on site
   const daysOnSite = pet.dateAddedToSite
     ? Math.floor(
         (Date.now() - new Date(pet.dateAddedToSite).getTime()) /
@@ -69,14 +68,14 @@ export const PetCard = ({ pet, onDelete, onEdit }: PetCardProps) => {
         {/* Pet Image / Link */}
         <Link to={`/pet/${pet.id}`}>
           <img
-            className="rounded-t-lg"
+            className="w-full h-64 object-cover rounded-t-lg"
             src={pet.image ? `/uploads/${pet.image}` : "/default-image.png"}
             alt={`${pet.species} for adoption`}
             loading="lazy"
           />
         </Link>
 
-        {/* Basket Icon (top-right) */}
+        {/* Basket Icon (top-right) - always visible, but if user not logged in => login prompt */}
         <button
           onClick={handleCartClick}
           className="absolute top-2 right-2 flex flex-col items-center text-[#333333] bg-white rounded-full p-2 shadow hover:shadow-lg hover:scale-105 transition"
@@ -102,22 +101,24 @@ export const PetCard = ({ pet, onDelete, onEdit }: PetCardProps) => {
           </span>
         </button>
 
-        {/* Edit Icon (below the cart icon) */}
-        <button
-          onClick={handleEditClick}
-          className="absolute top-16 right-2 flex flex-col items-center text-[#333333] bg-white rounded-full p-2 shadow hover:shadow-lg hover:scale-105 transition"
-        >
-          <svg
-            aria-hidden="true"
-            focusable="false"
-            className="w-4 h-4 fill-current"
-            role="img"
-            viewBox="0 0 512 512"
+        {/* Edit Icon - only if user is logged in */}
+        {user && (
+          <button
+            onClick={handleEditClick}
+            className="absolute top-16 right-2 flex flex-col items-center text-[#333333] bg-white rounded-full p-2 shadow hover:shadow-lg hover:scale-105 transition"
           >
-            <path d="M290.74 93.24l128 128L119.31 520.69l-128-128zM508.81 75.29l-72.38-72.38c-12.28-12.28-32.19-12.28-44.47 0L356.12 38.75l128 128 35.84-35.84c12.28-12.28 12.28-32.19-.15-44.62z" />
-          </svg>
-          <span className="text-xs font-medium">Edit</span>
-        </button>
+            <svg
+              aria-hidden="true"
+              focusable="false"
+              className="w-4 h-4 fill-current"
+              role="img"
+              viewBox="0 0 512 512"
+            >
+              <path d="M290.74 93.24l128 128L119.31 520.69l-128-128zM508.81 75.29l-72.38-72.38c-12.28-12.28-32.19-12.28-44.47 0L356.12 38.75l128 128 35.84-35.84c12.28-12.28 12.28-32.19-.15-44.62z" />
+            </svg>
+            <span className="text-xs font-medium">Edit</span>
+          </button>
+        )}
       </div>
 
       <div className="p-3">
@@ -145,10 +146,7 @@ export const PetCard = ({ pet, onDelete, onEdit }: PetCardProps) => {
         <div className="flex items-center justify-between mb-3">
           <span className="text-sm text-[#333333]">
             <span className="font-medium">Days on Site: </span>
-            {Math.floor(
-              (Date.now() - new Date(pet.dateAddedToSite).getTime()) /
-                (1000 * 60 * 60 * 24)
-            )}
+            {daysOnSite}
           </span>
         </div>
 
@@ -161,8 +159,8 @@ export const PetCard = ({ pet, onDelete, onEdit }: PetCardProps) => {
             {"More " + multipleSpeciesStringConverter(pet.species)}
           </Link>
 
-          {/* Show Delete only if user is logged in */}
-          {canDelete && !showConfirm && (
+          {/* Show the Delete button ONLY if user is logged in */}
+          {user && !showConfirm && (
             <button
               className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-[#E67E22] rounded-lg hover:bg-[#cf6e1d]"
               onClick={handleDeleteClick}
@@ -171,8 +169,7 @@ export const PetCard = ({ pet, onDelete, onEdit }: PetCardProps) => {
             </button>
           )}
 
-          {/* "Are you sure?" confirm prompt */}
-          {canDelete && showConfirm && (
+          {user && showConfirm && (
             <div className="flex items-center space-x-2">
               <span className="text-sm font-medium text-[#333333]">
                 Are you sure?
@@ -193,6 +190,33 @@ export const PetCard = ({ pet, onDelete, onEdit }: PetCardProps) => {
           )}
         </div>
       </div>
+
+      {/* If user not logged in and tries to add to cart => show "Please Login" */}
+      {showLoginPrompt && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded shadow-md max-w-sm mx-auto text-center">
+            <h2 className="text-xl font-bold mb-4">Please Login</h2>
+            <p className="mb-4">You must be logged in to perform this action.</p>
+            <div className="flex justify-center space-x-4">
+              <button
+                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+                onClick={() => setShowLoginPrompt(false)}
+              >
+                Close
+              </button>
+              <button
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                onClick={() => {
+                  setShowLoginPrompt(false);
+                  navigate("/users/login");
+                }}
+              >
+                Login
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </li>
   );
 };

@@ -1,4 +1,3 @@
-// src/App.tsx
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { RootLayout } from "./components/root";
 import { Homepage } from "./components/homepage";
@@ -23,7 +22,7 @@ import { fetchPets, fetchPet } from "./services/api";
 
 const router = createBrowserRouter([
   {
-    element: <AuthLayout />,        // <-- AuthProvider is inside here
+    element: <AuthLayout />, // AuthProvider context
     errorElement: <ErrorPage />,
     children: [
       {
@@ -33,7 +32,7 @@ const router = createBrowserRouter([
           { path: "/pets", element: <PetSearchPage />, loader: fetchPets },
           { path: "/pet/:id", element: <PetPage />, loader: fetchPet },
           { path: "/users/register", element: <RegisterForm /> },
-          { path: "/users/login", element: <LoginFrom /> },
+          { path: "/users/login", element: <LoginFrom /> }, // Make sure this exists
           { path: "/users/my-account", element: <MyAccount /> },
           { path: "/cart", element: <CartPage /> },
           { path: "/checkout", element: <CheckoutPage /> },

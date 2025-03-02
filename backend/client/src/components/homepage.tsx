@@ -1,8 +1,9 @@
-// src/components/homepage.tsx
-
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
 export const Homepage = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="bg-[#F7F9FA] text-[#333333]">
       {/* 1) HERO SECTION */}
@@ -24,7 +25,10 @@ export const Homepage = () => {
             Where tails wag and hearts connect! Discover your newest family
             member from our selection of furry friends.
           </p>
-          <button className="bg-[#E67E22] hover:bg-[#cf6e1d] text-white font-bold px-6 py-3 rounded">
+          <button
+            className="bg-[#E67E22] hover:bg-[#cf6e1d] text-white font-bold px-6 py-3 rounded"
+            onClick={() => navigate("/users/login")} 
+          >
             Adopt Now
           </button>
         </div>
