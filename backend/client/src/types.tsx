@@ -1,8 +1,8 @@
 // src/types.ts
 
 export interface Pet {
-  id: number;                 // Postgres numeric primary key
-  _id: string;                // Kept if your code still references _id
+  id: number;
+  _id: string;
   name: string;
   species: string;
   fee: number;
@@ -13,9 +13,7 @@ export interface Pet {
   description: string;
   town?: string;
   zip?: string;
-  adopted?: boolean;
-
-  // NEW: The owner_id field. Make it optional and possibly nullable:
+  isAdopted?: boolean;
   owner_id?: number | null;
 }
 
@@ -46,6 +44,7 @@ export interface LoginUser {
   email: string;
   password: string;
 }
+
 export interface RegisterUser {
   username: string;
   email: string;
@@ -53,12 +52,8 @@ export interface RegisterUser {
 }
 
 export interface User {
-  // If your backend sets req.user.id as a number, do:
   id?: number;
-
-  // Keep _id if some parts of your code still rely on a string ID
   _id?: string;
-
   message?: string;
   username?: string;
   email: string;
@@ -81,6 +76,22 @@ export interface AuthContextType {
 export interface PetCardProps {
   pet: Pet;
   onDelete: (id: string) => void;
+  onEdit?: (pet: Pet) => void; // in case you also have an edit handler
+}
+
+/**
+ * For SearchBar:
+ * - speciesQuery is now an array of strings to allow multiple selections.
+ */
+export interface SearchBarProps {
+  speciesQuery: string[];
+  sortQuery: string;
+  clearQuery: () => void;
+  addPetHandler: () => void;
+  updateSearchParams: (key: string, value: string) => void;
+  // If you need a toggle function passed in, add it here:
+  // handleSpeciesToggle?: (species: string) => void;
+  handleSpeciesToggle: (species: string) => void;
 }
 
 export type CartActionType =

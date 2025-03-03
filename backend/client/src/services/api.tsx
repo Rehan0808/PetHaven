@@ -1,20 +1,18 @@
-// client/src/services/api.tsx
 import axios from "axios";
-import { json } from "react-router-dom";
 import { RegisterUser, LoginUser } from "../types";
+
+const BASE_URL = "http://localhost:8001/api/v1"; // Ensure consistency
 
 /**
  * GET all pets
  */
 export const fetchPets = async () => {
-  const query = window.location.search;
   try {
-    const response = await axios.get(`/api/v1/pets${query}`, {
-      // no withCredentials needed if purely header-based
-    });
+    const query = window.location.search;
+    const response = await axios.get(`${BASE_URL}/pets${query}`);
     return response.data;
-  } catch (err) {
-    throw json({ message: "No pets available." }, { status: 500 });
+  } catch (err: any) {
+    return { error: err.response?.data?.message || "No pets available." };
   }
 };
 
@@ -23,13 +21,10 @@ export const fetchPets = async () => {
  */
 export const fetchPet = async ({ params }: { params: any }) => {
   try {
-    const id = params.id;
-    const response = await axios.get(`/api/v1/pets/${id}`, {
-      // no withCredentials needed
-    });
+    const response = await axios.get(`${BASE_URL}/pets/${params.id}`);
     return response.data;
-  } catch (err) {
-    throw json({ message: "Pet not found." }, { status: 404 });
+  } catch (err: any) {
+    return { error: err.response?.data?.message || "Pet not found." };
   }
 };
 
@@ -38,16 +33,14 @@ export const fetchPet = async ({ params }: { params: any }) => {
  */
 export const addPet = async (formData: FormData) => {
   try {
-    // read token from localStorage
     const token = localStorage.getItem("authToken");
-
-    const response = await axios.post("http://localhost:8001/api/v1/pets", formData, {
+    const response = await axios.post(`${BASE_URL}/pets`, formData, {
       headers: {
         "Content-Type": "multipart/form-data",
         Authorization: token ? `Bearer ${token}` : "",
       },
     });
-    return response.data; // { msg, pet }
+    return response.data;
   } catch (err: any) {
     return { error: err.response?.data?.message || "Failed to add pet" };
   }
@@ -58,12 +51,12 @@ export const addPet = async (formData: FormData) => {
  */
 export const registerUser = async (user: RegisterUser) => {
   try {
-    const response = await axios.post("/api/v1/users/register", user, {
+    const response = await axios.post(`${BASE_URL}/users/register`, user, {
       headers: { "Content-Type": "application/json" },
     });
-    return response.data; // { success, user, token }
+    return response.data;
   } catch (err: any) {
-    return { error: err.response?.data?.message || "Server error during registration" };
+    return { error: err.response?.data?.message || "Registration failed" };
   }
 };
 
@@ -72,10 +65,10 @@ export const registerUser = async (user: RegisterUser) => {
  */
 export const loginUser = async (user: LoginUser) => {
   try {
-    const response = await axios.post("/api/v1/users/login", user, {
+    const response = await axios.post(`${BASE_URL}/users/login`, user, {
       headers: { "Content-Type": "application/json" },
     });
-    return response.data; // { success, user, token }
+    return response.data;
   } catch (err: any) {
     return { error: err.response?.data?.message || "Login failed" };
   }
@@ -87,13 +80,13 @@ export const loginUser = async (user: LoginUser) => {
 export const getUser = async () => {
   try {
     const token = localStorage.getItem("authToken");
-    const response = await axios.get("/api/v1/users/isUserAuth", {
+    const response = await axios.get(`${BASE_URL}/users/isUserAuth`, {
       headers: {
         "Content-Type": "application/json",
         Authorization: token ? `Bearer ${token}` : "",
       },
     });
-    return response.data; // { success, user }
+    return response.data;
   } catch (err: any) {
     return { error: err.response?.data?.message || "Failed to get user session" };
   }
@@ -105,7 +98,7 @@ export const getUser = async () => {
 export const logoutUser = async () => {
   try {
     const token = localStorage.getItem("authToken");
-    const response = await axios.get("/api/v1/users/logout", {
+    const response = await axios.get(`${BASE_URL}/users/logout`, {
       headers: {
         "Content-Type": "application/json",
         Authorization: token ? `Bearer ${token}` : "",

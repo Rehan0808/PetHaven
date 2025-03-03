@@ -1,13 +1,12 @@
-// backend/routes/donationRoutes.js
-
+// routes/donationRoutes.js
 const express = require("express");
 const router = express.Router();
 const multer = require("multer");
-const dayjs = require("dayjs"); // <-- NEW
+const dayjs = require("dayjs");
 
-// Require the Sequelize model for donation campaigns
-// NOTE: If you have a models/index.js, adjust import accordingly
-const DonationCampaign = require("../models").DonationCampaign;
+// Import your DonationCampaign model from your models/index.js file
+// Adjust the require path if needed.
+const { DonationCampaign } = require("../models");
 
 // Multer setup for handling file uploads
 const storage = multer.diskStorage({
@@ -21,7 +20,9 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// GET all donation campaigns
+/**
+ * GET all donation campaigns
+ */
 router.get("/", async (req, res) => {
   try {
     const campaigns = await DonationCampaign.findAll();
@@ -32,28 +33,33 @@ router.get("/", async (req, res) => {
   }
 });
 
-// POST new campaign (with optional image)
+/**
+ * POST a new donation campaign (with optional image)
+ */
 router.post("/", upload.single("image"), async (req, res) => {
   try {
     const {
       petName,
       maxDonation,
-      lastDate: userEnteredDate, // rename for clarity
+      lastDate: userEnteredDate,
       shortInfo,
       longDescription,
     } = req.body;
 
-    // If user typed date like "22/2/2025", parse it into "YYYY-MM-DD"
-    // dayjs("22/2/2025", "D/M/YYYY") => "2025-02-22"
+    if (!petName || !maxDonation || !userEnteredDate || !shortInfo || !longDescription) {
+      return res.status(400).json({ error: "All fields are required" });
+    }
+
+    // Parse the date. If the user enters a date like "22/2/2025", convert it to "YYYY-MM-DD".
     const parsedDate = dayjs(userEnteredDate, "D/M/YYYY").isValid()
       ? dayjs(userEnteredDate, "D/M/YYYY").format("YYYY-MM-DD")
-      : userEnteredDate; // fallback if it’s already in YYYY-MM-DD
+      : userEnteredDate;
 
     const imagePath = req.file ? req.file.path : null;
 
     const newCampaign = await DonationCampaign.create({
       pet_name: petName,
-      max_donation: maxDonation,
+      max_donation: parseFloat(maxDonation),
       last_date: parsedDate,
       short_info: shortInfo,
       long_description: longDescription,
@@ -67,7 +73,9 @@ router.post("/", upload.single("image"), async (req, res) => {
   }
 });
 
-// GET single campaign by ID
+/**
+ * GET a single donation campaign by ID
+ */
 router.get("/:id", async (req, res) => {
   try {
     const campaign = await DonationCampaign.findByPk(req.params.id);
@@ -77,6 +85,24 @@ router.get("/:id", async (req, res) => {
     res.json({ data: campaign });
   } catch (err) {
     console.error("Error fetching single campaign:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+/**
+ * DELETE a donation campaign by ID
+ */
+router.delete("/:id", async (req, res) => {
+  try {
+    const campaignId = req.params.id;
+    const campaign = await DonationCampaign.findByPk(campaignId);
+    if (!campaign) {
+      return res.status(404).json({ error: "Donation campaign not found" });
+    }
+    await campaign.destroy();
+    res.json({ message: "Donation campaign deleted successfully" });
+  } catch (err) {
+    console.error("Error deleting donation campaign:", err);
     res.status(500).json({ error: "Server error" });
   }
 });

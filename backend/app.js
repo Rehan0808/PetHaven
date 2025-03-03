@@ -3,27 +3,28 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
-const cookieParser = require("cookie-parser"); // optional, not used if no cookies
+const cookieParser = require("cookie-parser");
 const path = require("path");
 
 const petRouter = require("./routes/petsRoutes");
 const userRouter = require("./routes/usersRoutes");
 const donationRouter = require("./routes/donationRoutes");
 
+// 1) IMPORT the new paymentRoutes
+const paymentRouter = require("./routes/paymentRoutes");
+
 const app = express();
 
-// If purely header-based, you don't strictly need credentials: true
-// but let's keep a simple CORS config to allow requests from React
 app.use(
   cors({
     origin: "http://localhost:3000",
-    credentials: false, // No cookie usage needed
+    credentials: false,
   })
 );
 
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser()); // harmless if you keep it
+app.use(cookieParser());
 
 // Serve static files
 app.use(express.static(path.join(__dirname, "client/build")));
@@ -37,6 +38,9 @@ app.use("/api/v1/pets", petRouter);
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/donations", donationRouter);
 
+// 2) USE the paymentRouter for /payment
+app.use("/payment", paymentRouter);
+
 // Catch-all for React routing
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "client/build/index.html"));
@@ -44,7 +48,6 @@ app.get("*", (req, res) => {
 
 /**
  * GLOBAL ERROR HANDLER
- * Ensures all thrown errors return JSON instead of HTML
  */
 app.use((err, req, res, next) => {
   console.error("Global error handler:", err);

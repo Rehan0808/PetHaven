@@ -7,8 +7,8 @@ import useAuth from "../../context/userContext/useAuth";
 
 interface PetCardProps {
   pet: Pet;
-  onDelete: (id: string) => void; 
-  onEdit: (pet: Pet) => void;     
+  onDelete: (id: string) => void;
+  onEdit: (pet: Pet) => void;
 }
 
 export const PetCard = ({ pet, onDelete, onEdit }: PetCardProps) => {
@@ -63,7 +63,19 @@ export const PetCard = ({ pet, onDelete, onEdit }: PetCardProps) => {
     : "N/A";
 
   return (
-    <li className="max-w-sm md:w-2/5 bg-white border border-gray-200 rounded-lg shadow">
+    <li
+      className="
+        max-w-sm 
+        md:w-2/5 
+        bg-[#E5E7EB]
+        border 
+        border-gray-300 
+        rounded-lg 
+        shadow-2xl 
+        hover:shadow-[0_35px_60px_-10px_rgba(0,0,0,0.3)] 
+        transition-shadow
+      "
+    >
       <div className="relative">
         {/* Pet Image / Link */}
         <Link to={`/pet/${pet.id}`}>
@@ -75,10 +87,10 @@ export const PetCard = ({ pet, onDelete, onEdit }: PetCardProps) => {
           />
         </Link>
 
-        {/* Basket Icon (top-right) - always visible, but if user not logged in => login prompt */}
+        {/* Basket Icon (top-right) */}
         <button
           onClick={handleCartClick}
-          className="absolute top-2 right-2 flex flex-col items-center text-[#333333] bg-white rounded-full p-2 shadow hover:shadow-lg hover:scale-105 transition"
+          className="absolute top-2 right-2 flex flex-col items-center text-[#111827] bg-white rounded-full p-2 shadow hover:shadow-lg hover:scale-105 transition"
         >
           <svg
             aria-hidden="true"
@@ -105,7 +117,7 @@ export const PetCard = ({ pet, onDelete, onEdit }: PetCardProps) => {
         {user && (
           <button
             onClick={handleEditClick}
-            className="absolute top-16 right-2 flex flex-col items-center text-[#333333] bg-white rounded-full p-2 shadow hover:shadow-lg hover:scale-105 transition"
+            className="absolute top-16 right-2 flex flex-col items-center text-[#111827] bg-white rounded-full p-2 shadow hover:shadow-lg hover:scale-105 transition"
           >
             <svg
               aria-hidden="true"
@@ -124,12 +136,12 @@ export const PetCard = ({ pet, onDelete, onEdit }: PetCardProps) => {
       <div className="p-3">
         {/* Gender & Age */}
         <div className="flex items-center justify-start mb-2">
-          <span className="mr-3 text-lg font-bold text-[#333333]">
+          <span className="mr-3 text-lg font-bold text-[#111827]">
             {pet.gender
               ? pet.gender.charAt(0).toUpperCase() + pet.gender.slice(1)
               : "Unknown"}
           </span>
-          <span className="text-lg text-[#333333]">
+          <span className="text-lg text-[#111827]">
             <span className="font-bold">Age: </span>
             {pet.age ?? "Unknown"}
           </span>
@@ -137,14 +149,14 @@ export const PetCard = ({ pet, onDelete, onEdit }: PetCardProps) => {
 
         {/* Adoption Fee */}
         <div className="flex items-center justify-between mb-1">
-          <span className="text-md text-[#333333]">
+          <span className="text-md text-[#111827]">
             <span className="font-bold">Adoption Fee: </span>${pet.fee ?? "N/A"}
           </span>
         </div>
 
         {/* Days on Site */}
         <div className="flex items-center justify-between mb-3">
-          <span className="text-sm text-[#333333]">
+          <span className="text-sm text-[#111827]">
             <span className="font-medium">Days on Site: </span>
             {daysOnSite}
           </span>
@@ -154,15 +166,17 @@ export const PetCard = ({ pet, onDelete, onEdit }: PetCardProps) => {
         <div className="flex items-center justify-start mb-2">
           <Link
             to={`/pets/?species=${pet.species}`}
-            className="inline-flex items-center mr-3 px-3 py-2 text-sm font-medium text-white bg-[#E67E22] rounded-lg hover:bg-[#cf6e1d]"
+            className="inline-flex items-center mr-3 px-3 py-2 text-sm font-medium text-white
+                       bg-[#1E3A8A] rounded-lg hover:bg-[#1D4ED8]"
           >
             {"More " + multipleSpeciesStringConverter(pet.species)}
           </Link>
 
-          {/* Show the Delete button ONLY if user is logged in */}
+          {/* Delete button */}
           {user && !showConfirm && (
             <button
-              className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-[#E67E22] rounded-lg hover:bg-[#cf6e1d]"
+              className="inline-flex items-center px-3 py-2 text-sm font-medium text-white
+                         bg-[#1E3A8A] rounded-lg hover:bg-[#1D4ED8]"
               onClick={handleDeleteClick}
             >
               Delete
@@ -171,17 +185,19 @@ export const PetCard = ({ pet, onDelete, onEdit }: PetCardProps) => {
 
           {user && showConfirm && (
             <div className="flex items-center space-x-2">
-              <span className="text-sm font-medium text-[#333333]">
+              <span className="text-sm font-medium text-[#111827]">
                 Are you sure?
               </span>
               <button
-                className="px-3 py-2 text-sm font-medium text-white bg-[#2C3E50] rounded-lg hover:bg-[#34495e]"
+                className="px-3 py-2 text-sm font-medium text-white bg-[#1E3A8A]
+                           rounded-lg hover:bg-[#1D4ED8]"
                 onClick={confirmDelete}
               >
                 Yes
               </button>
               <button
-                className="px-3 py-2 text-sm font-medium text-white bg-[#E67E22] rounded-lg hover:bg-[#cf6e1d]"
+                className="px-3 py-2 text-sm font-medium text-white bg-[#9CA3AF]
+                           rounded-lg hover:bg-[#6B7280]"
                 onClick={cancelDelete}
               >
                 No
@@ -191,7 +207,7 @@ export const PetCard = ({ pet, onDelete, onEdit }: PetCardProps) => {
         </div>
       </div>
 
-      {/* If user not logged in and tries to add to cart => show "Please Login" */}
+      {/* "Please Login" modal */}
       {showLoginPrompt && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded shadow-md max-w-sm mx-auto text-center">
@@ -205,7 +221,7 @@ export const PetCard = ({ pet, onDelete, onEdit }: PetCardProps) => {
                 Close
               </button>
               <button
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                className="px-4 py-2 bg-[#2563EB] text-white rounded hover:bg-[#1D4ED8]"
                 onClick={() => {
                   setShowLoginPrompt(false);
                   navigate("/users/login");

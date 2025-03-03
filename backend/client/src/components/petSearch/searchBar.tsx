@@ -1,12 +1,7 @@
-import { Form, useSearchParams } from "react-router-dom";
+// src/components/petSearch/searchBar.tsx
 
-interface SearchBarProps {
-  speciesQuery: string;
-  sortQuery: string;
-  clearQuery: () => void;
-  addPetHandler: () => void;
-  updateSearchParams: (key: string, value: string) => void;
-}
+import { Form } from "react-router-dom";
+import { SearchBarProps } from "../../types"; // Adjust import path as needed
 
 const SPECIES_OPTIONS = ["cat", "dog", "bunny", "chicken", "rat"];
 const SORT_OPTIONS = [
@@ -22,11 +17,6 @@ export const SearchBar = ({
   addPetHandler,
   updateSearchParams,
 }: SearchBarProps) => {
-  const [searchParams] = useSearchParams();
-
-  const styleByQuery = (elementName: string, elementId: string) =>
-    searchParams.getAll(elementName).includes(elementId);
-
   return (
     <Form id="search-form" role="search">
       {/* Species Filter */}
@@ -36,22 +26,29 @@ export const SearchBar = ({
             Show Me:
           </div>
           <div className="flex flex-wrap justify-center gap-x-1 gap-y-2">
-            {SPECIES_OPTIONS.map((species) => (
-              <button
-                key={species}
-                id={species}
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  updateSearchParams("species", species);
-                }}
-                className={`w-2/5 h-12 min-w-min lg:m-2 lg:w-1/6 px-0 py-0 text-sm font-medium rounded-lg border border-gray-200 hover:bg-slate-400
-                  ${styleByQuery("species", species) ? "bg-slate-700 text-white" : "bg-slate-100 text-black"}
-                `}
-              >
-                {species.charAt(0).toUpperCase() + species.slice(1)}
-              </button>
-            ))}
+            {SPECIES_OPTIONS.map((species) => {
+              const isSelected = speciesQuery.includes(species);
+              return (
+                <button
+                  key={species}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    // Tells the parent to toggle or update the species in the URL
+                    updateSearchParams("species", species);
+                  }}
+                  className={`w-2/5 h-12 min-w-min lg:m-2 lg:w-1/6 px-0 py-0 text-sm font-medium rounded-lg border border-gray-200 hover:bg-slate-400
+                    ${
+                      isSelected
+                        ? "bg-slate-700 text-white"
+                        : "bg-slate-100 text-black"
+                    }
+                  `}
+                >
+                  {species.charAt(0).toUpperCase() + species.slice(1)}
+                </button>
+              );
+            })}
           </div>
         </div>
       </fieldset>
@@ -62,24 +59,34 @@ export const SearchBar = ({
           Sort By:
         </div>
         <div className="inline-flex rounded-md shadow-sm">
-          {SORT_OPTIONS.map(({ key, label }, index) => (
-            <button
-              key={key}
-              id={key}
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                updateSearchParams("sort", key);
-              }}
-              className={`px-4 py-0 w-34 h-10 text-sm font-medium border border-gray-200
-                ${index === 0 ? "rounded-l-lg" : ""}
-                ${index === SORT_OPTIONS.length - 1 ? "rounded-r-lg" : ""}
-                ${styleByQuery("sort", key) ? "bg-slate-700 text-white" : "bg-slate-100 text-black"}
-              `}
-            >
-              {label}
-            </button>
-          ))}
+          {SORT_OPTIONS.map(({ key, label }, index) => {
+            const isSortSelected = sortQuery === key;
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  updateSearchParams("sort", key);
+                }}
+                className={`px-4 py-0 w-34 h-10 text-sm font-medium border border-gray-200
+                  ${index === 0 ? "rounded-l-lg" : ""}
+                  ${
+                    index === SORT_OPTIONS.length - 1
+                      ? "rounded-r-lg"
+                      : ""
+                  }
+                  ${
+                    isSortSelected
+                      ? "bg-slate-700 text-white"
+                      : "bg-slate-100 text-black"
+                  }
+                `}
+              >
+                {label}
+              </button>
+            );
+          })}
         </div>
       </fieldset>
 

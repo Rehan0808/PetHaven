@@ -11,7 +11,7 @@ export const Navbar = () => {
 
   return (
     <>
-      <nav className="relative flex flex-wrap items-center justify-between px-2 py-3 bg-[#2C3E50]">
+      <nav className="relative flex flex-wrap items-center justify-between px-2 py-3 bg-[#1E3A8A]">
         {message && location.pathname !== "/users/login" ? (
           <div
             className="fixed w-1/2 inset-x-0 max-w-max mx-auto top-1 transition-opacity ease-in duration-300 bg-opacity-80 bg-green-100 rounded-lg py-1 px-2 text-base text-green-700"
@@ -28,7 +28,7 @@ export const Navbar = () => {
               className="text-lg font-bold leading-relaxed inline-block mr-4 py-2 whitespace-nowrap text-white"
               to="/"
             >
-              <img src="/logo.svg" alt="" className=" w-40" />
+              <img src="/logo.svg" alt="" className="w-40" />
             </NavLink>
             <button
               className="text-white cursor-pointer text-xl leading-none px-3 py-1 border border-solid border-transparent rounded bg-transparent block lg:hidden outline-none focus:outline-none"
@@ -56,7 +56,7 @@ export const Navbar = () => {
                 </NavLink>
               </li>
 
-              {/* Existing navigation items */}
+              {/* See All Pets */}
               <li className="nav-item">
                 <NavLink
                   onClick={() => setNavbarOpen(false)}
@@ -67,7 +67,7 @@ export const Navbar = () => {
                 </NavLink>
               </li>
 
-              {/* Other pet categories */}
+              {/* Pet Categories */}
               <li className="nav-item">
                 <NavLink
                   onClick={() => setNavbarOpen(false)}
@@ -165,7 +165,7 @@ export const Navbar = () => {
                 )}
               </li>
 
-              {/* Cart (Basket) - Kept Intact */}
+              {/* Cart (Basket) */}
               <li className="nav-item">
                 <NavLink
                   onClick={() => setNavbarOpen(false)}
@@ -175,7 +175,7 @@ export const Navbar = () => {
                   <svg
                     aria-hidden="true"
                     focusable="false"
-                    className="w-10 h-10"
+                    className="w-10 h-10 text-white fill-current"
                     role="img"
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="50 100 600 400"
@@ -185,7 +185,7 @@ export const Navbar = () => {
                     </g>
                   </svg>
                   {cartItems.length > 0 && (
-                    <span className="w-5 h-5 rounded-full flex justify-center items-center -ml-3 -mt-6 leading-none text-center whitespace-nowrap bg-[#E67E22] text-white text-xs">
+                    <span className="w-5 h-5 rounded-full flex justify-center items-center -ml-3 -mt-6 leading-none text-center whitespace-nowrap bg-[#F59E0B] text-white text-xs">
                       {cartItems.length}
                     </span>
                   )}
