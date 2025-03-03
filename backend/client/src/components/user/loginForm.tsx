@@ -63,7 +63,7 @@ export const LoginFrom = () => {
                     className="text-blue-600 hover:text-blue-700 focus:text-blue-700
                       active:text-blue-800 duration-200 transition ease-in-out"
                   >
-                    New to petConnect? Register for an account!
+                    New to petHeaven? Register for an account!
                   </Link>
                 </div>
 
