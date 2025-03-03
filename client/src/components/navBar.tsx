@@ -2,6 +2,7 @@ import { useState, useContext } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import CartContext from "../context/cartContext/cartContext";
 import useAuth from "../context/userContext/useAuth";
+import { FaShoppingBasket } from "react-icons/fa";
 
 export const Navbar = () => {
   const location = useLocation();
@@ -28,7 +29,7 @@ export const Navbar = () => {
               className="text-lg font-bold leading-relaxed inline-block mr-4 py-2 whitespace-nowrap text-white"
               to="/"
             >
-              <img src="/logo.svg" alt="" className="w-40" />
+              <img src="/logo.svg" alt="Logo" className="w-40" />
             </NavLink>
             <button
               className="text-white cursor-pointer text-xl leading-none px-3 py-1 border border-solid border-transparent rounded bg-transparent block lg:hidden outline-none focus:outline-none"
@@ -165,27 +166,16 @@ export const Navbar = () => {
                 )}
               </li>
 
-              {/* Cart (Basket) */}
-              <li className="nav-item">
+              {/* Cart (Basket) - Positioned at the top right */}
+              <li className="nav-item relative">
                 <NavLink
                   onClick={() => setNavbarOpen(false)}
                   className="px-3 py-1 flex items-center justify-center text-s font-bold leading-snug text-white hover:scale-110 duration-300 hover:no-underline"
                   to="/cart"
                 >
-                  <svg
-                    aria-hidden="true"
-                    focusable="false"
-                    className="w-10 h-10 text-white fill-current"
-                    role="img"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="50 100 600 400"
-                  >
-                    <g fill="currentColor">
-                      <path d="m484.2 167.89h15.422l-88.594-88.594c-2.0781-2.0781-5.5781-2.0781-7.7656 0-1.4219 1.4219-1.6406 3.0625-1.6406 3.8281 0 0.875 0.21875 2.5156 1.6406 3.8281z" />
-                    </g>
-                  </svg>
+                  {FaShoppingBasket({ size: 32 })}
                   {cartItems.length > 0 && (
-                    <span className="w-5 h-5 rounded-full flex justify-center items-center -ml-3 -mt-6 leading-none text-center whitespace-nowrap bg-[#F59E0B] text-white text-xs">
+                    <span className="absolute top-0 right-0 w-5 h-5 rounded-full flex justify-center items-center bg-[#F59E0B] text-white text-xs">
                       {cartItems.length}
                     </span>
                   )}

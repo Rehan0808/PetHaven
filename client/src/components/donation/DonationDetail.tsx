@@ -250,13 +250,13 @@ export const DonationDetail = () => {
               <button
                 type="button"
                 onClick={() => setShowModal(false)}
-                className="bg-[#2C3E50] hover:bg-[#34495e] text-white px-3 py-1 rounded text-sm font-bold"
+                className="bg-[#e0e0e0 hover:bg-[#34495e] text-black px-3 py-1 rounded text-sm font-bold"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="bg-[#E67E22] hover:bg-[#cf6e1d] text-white px-3 py-1 rounded text-sm font-bold"
+                className="bg-[#f2f2f2] hover:bg-[#cf6e1d] text-black px-6 py-2 rounded font-bold transition-colors duration-200"
               >
                 Submit Donation
               </button>

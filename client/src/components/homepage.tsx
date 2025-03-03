@@ -14,11 +14,11 @@ export const Homepage = () => {
         }}
       >
         {/* Removed the overlay entirely */}
-
+        
         {/* Centered text on top of image */}
         <div className="relative z-10 px-4 text-center max-w-3xl">
           <h1 className="text-4xl md:text-5xl font-bold mb-4 text-white drop-shadow-md">
-            Welcome to Pet Adoption
+            Welcome to Pet Heaven
           </h1>
           <p className="text-lg md:text-xl mb-6 text-white drop-shadow-md">
             Where tails wag and hearts connect! Discover your newest family
