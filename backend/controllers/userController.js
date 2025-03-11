@@ -1,7 +1,7 @@
 // controllers/userController.js
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const { User } = require("../models"); // Import the instantiated model with static methods attached
+const { User } = require("../models");
 require("dotenv").config();
 
 /**
@@ -12,7 +12,7 @@ exports.registration = async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
-    // 1) Check if user already exists by email using the static method on User
+    // 1) Check if user already exists by email
     const existingUser = await User.findUserByEmail(email);
     if (existingUser) {
       return res.status(400).json({
@@ -29,14 +29,12 @@ exports.registration = async (req, res) => {
       password: hashedPassword,
     });
 
-    // 3) Generate JWT (just like in login)
-    const token = jwt.sign(
-      { id: newUser.id },
-      process.env.JWT_SECRET,
-      { expiresIn: "1h" } // token expires in 1 hour
-    );
+    // 3) Generate JWT
+    const token = jwt.sign({ id: newUser.id }, process.env.JWT_SECRET, {
+      expiresIn: "1h", // token expires in 1 hour
+    });
 
-    // 4) Set the token in a cookie
+    // 4) Set the token in a cookie (optional if you're also returning it in JSON)
     res.cookie("token", token, {
       httpOnly: true,
       secure: false, // change to true in production if using HTTPS
@@ -44,10 +42,11 @@ exports.registration = async (req, res) => {
       maxAge: 60 * 60 * 1000, // 1 hour in ms
     });
 
-    // 5) Return a 201 response
+    // 5) Return the token in JSON so the frontend can store it in localStorage
     return res.status(201).json({
       success: true,
       message: "User registered successfully",
+      token, // <-- Add this line
       user: {
         id: newUser.id,
         username: newUser.username,
@@ -86,12 +85,11 @@ exports.login = async (req, res) => {
       });
     }
 
-    const token = jwt.sign(
-      { id: user.id },
-      process.env.JWT_SECRET,
-      { expiresIn: "1h" }
-    );
+    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
+      expiresIn: "1h",
+    });
 
+    // Set the token in a cookie (optional)
     res.cookie("token", token, {
       httpOnly: true,
       secure: false,
@@ -99,9 +97,11 @@ exports.login = async (req, res) => {
       maxAge: 60 * 60 * 1000,
     });
 
+    // Return the token so the frontend can store it in localStorage
     return res.status(200).json({
       success: true,
       message: "Login successful",
+      token, // <-- Add this line
       user: {
         id: user.id,
         username: user.username,

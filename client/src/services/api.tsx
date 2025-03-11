@@ -47,6 +47,25 @@ export const addPet = async (formData: FormData) => {
 };
 
 /**
+ * DELETE a pet by ID
+ */
+export const deletePet = async (petId: string) => {
+  try {
+    const token = localStorage.getItem("authToken");
+    const response = await axios.delete(`${BASE_URL}/pets/${petId}`, {
+      headers: {
+        Authorization: token ? `Bearer ${token}` : "",
+      },
+    });
+    return response.data;
+  } catch (err: any) {
+    return {
+      error: err.response?.data?.message || "Failed to delete pet",
+    };
+  }
+};
+
+/**
  * REGISTER user
  */
 export const registerUser = async (user: RegisterUser) => {

@@ -84,7 +84,7 @@ const getPet = async (req, res) => {
 
 /**
  * POST /api/v1/pets
- * ANYONE can add a pet
+ * Anyone can add a pet, but if the user is logged in, we store their id as owner_id.
  */
 const addPet = async (req, res) => {
   try {
@@ -98,6 +98,9 @@ const addPet = async (req, res) => {
     const parsedFee = parseFloat(fee) || 0;
     const parsedZip = zip ? parseInt(zip, 10) : null;
 
+    // If the user is logged in, store their id as the owner_id
+    const owner_id = req.user ? req.user.id : null;
+
     const newPet = await Pet.create({
       name,
       species,
@@ -108,6 +111,7 @@ const addPet = async (req, res) => {
       zip: parsedZip,
       town,
       image: imageFilename,
+      owner_id,
     });
 
     return res.status(201).json({
@@ -125,26 +129,27 @@ const addPet = async (req, res) => {
 
 /**
  * DELETE /api/v1/pets/:id
- * 
- * If you want to require the user to be logged in, you can check `req.user`.
- * Otherwise, remove the check below. 
- * For example:
- * if (!req.user) { return res.status(401).json({ error: "Not logged in" }); }
- * 
- * But we do NOT check ownership, so any logged-in user can delete any pet.
+ * Only the user who created the pet (owner) can delete it.
  */
 const deletePet = async (req, res) => {
   try {
-    // Optionally check if the user is logged in:
-    // if (!req.user) {
-    //   return res.status(401).json({ error: "You must be logged in" });
-    // }
+    // Require that the user is logged in
+    if (!req.user) {
+      return res.status(401).json({ error: "User must be logged in" });
+    }
 
+    // Find the pet by its ID
     const pet = await Pet.findByPk(req.params.id);
     if (!pet) {
       return res.status(404).json({ error: "Pet not found" });
     }
 
+    // Verify that the authenticated user is the owner of the pet
+    if (pet.owner_id !== req.user.id) {
+      return res.status(403).json({ error: "You are not authorized to delete this pet" });
+    }
+
+    // Delete the pet
     await pet.destroy();
     return res.status(200).json({
       msg: "Pet deleted successfully",
@@ -161,7 +166,7 @@ const deletePet = async (req, res) => {
 
 /**
  * PUT /api/v1/pets/:id
- * ANYONE can update
+ * Anyone can update a pet
  */
 const updatePet = async (req, res) => {
   try {

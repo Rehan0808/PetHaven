@@ -18,7 +18,10 @@ const app = express();
 app.use(
   cors({
     origin: "http://localhost:3000",
+    // If you do NOT use cookies, you can keep this as false:
     credentials: false,
+    // If you want to explicitly allow the Authorization header:
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 

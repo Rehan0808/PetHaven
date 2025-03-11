@@ -29,7 +29,6 @@ export const PetSearchPage: React.FC = () => {
 
   /**
    * Generic function to set a single key/value in URL.
-   * (We'll still use this for "sort", "page", etc.)
    */
   const updateSearchParams = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams);
@@ -76,9 +75,7 @@ export const PetSearchPage: React.FC = () => {
       setLoading(true);
       try {
         const query = queryString.stringify(Object.fromEntries(searchParams));
-        const response = await fetch(
-          `http://localhost:8001/api/v1/pets?${query}`
-        );
+        const response = await fetch(`http://localhost:8001/api/v1/pets?${query}`);
         if (!response.ok) throw new Error("Failed to fetch pets");
 
         const result = await response.json();
@@ -151,18 +148,25 @@ export const PetSearchPage: React.FC = () => {
   };
 
   /**
-   * Delete Pet
+   * DELETE PET
+   * -----------
+   * Updated to include Authorization header
    */
   const handleDeletePet = async (petId: string) => {
     try {
-      const response = await fetch(
-        `http://localhost:8001/api/v1/pets/${petId}`,
-        {
-          method: "DELETE",
-        }
-      );
+      // Retrieve token from localStorage
+      const token = localStorage.getItem("authToken");
+      const response = await fetch(`http://localhost:8001/api/v1/pets/${petId}`, {
+        method: "DELETE",
+        headers: {
+          // If token exists, attach it as Bearer token
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+      });
+
       if (!response.ok) throw new Error("Failed to delete pet");
 
+      // On success, remove pet from state
       setPets((prev) => {
         if (!prev) return { pets: [], count: 0 };
         return {
@@ -218,9 +222,7 @@ export const PetSearchPage: React.FC = () => {
         <div className="flex my-20">
           <Pagination
             pageList={pageList}
-            paginationQuery={(e) =>
-              updateSearchParams("page", e.currentTarget.id)
-            }
+            paginationQuery={(e) => updateSearchParams("page", e.currentTarget.id)}
             previous={(currentPage - 1).toString()}
             next={(currentPage + 1).toString()}
           />
@@ -248,9 +250,7 @@ export const PetSearchPage: React.FC = () => {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white p-6 rounded shadow-md max-w-sm mx-auto text-center">
               <h2 className="text-xl font-bold mb-4">Please Login</h2>
-              <p className="mb-4">
-                You must be logged in to perform this action.
-              </p>
+              <p className="mb-4">You must be logged in to perform this action.</p>
               <div className="flex justify-center space-x-4">
                 <button
                   className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
