@@ -18,6 +18,7 @@ module.exports = (sequelize) => {
         type: DataTypes.FLOAT,
         allowNull: false,
       },
+      // Keep not-null, so the DB always has a date
       last_date: {
         type: DataTypes.DATE,
         allowNull: false,
@@ -37,7 +38,7 @@ module.exports = (sequelize) => {
     },
     {
       tableName: "donation_campaigns",
-      timestamps: false,
+      timestamps: false, // or true if you want createdAt/updatedAt
     }
   );
 

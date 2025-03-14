@@ -128,3 +128,67 @@ export const logoutUser = async () => {
     return { error: err.response?.data?.message || "Logout failed" };
   }
 };
+
+/**
+ * GET all donation campaigns
+ */
+export const fetchDonations = async () => {
+  try {
+    const response = await axios.get(`${BASE_URL}/donations`);
+    return response.data; // { data: [ ... ] }
+  } catch (err: any) {
+    return { error: err.response?.data?.message || "Failed to fetch donations" };
+  }
+};
+
+/**
+ * GET single donation campaign by ID
+ */
+export const fetchDonation = async (id: number | string) => {
+  try {
+    const response = await axios.get(`${BASE_URL}/donations/${id}`);
+    return response.data; // { data: { ... } }
+  } catch (err: any) {
+    return { error: err.response?.data?.message || "Failed to fetch donation" };
+  }
+};
+
+/**
+ * CREATE a new donation campaign (multipart/form-data if image)
+ */
+export const createDonation = async (formData: FormData) => {
+  try {
+    const response = await axios.post(`${BASE_URL}/donations`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return response.data; // { data: { ... } }
+  } catch (err: any) {
+    return { error: err.response?.data?.message || "Failed to create donation" };
+  }
+};
+
+/**
+ * UPDATE an existing donation campaign (PUT)
+ */
+export const updateDonation = async (id: number | string, formData: FormData) => {
+  try {
+    const response = await axios.put(`${BASE_URL}/donations/${id}`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return response.data; // { data: { ... } }
+  } catch (err: any) {
+    return { error: err.response?.data?.message || "Failed to update donation" };
+  }
+};
+
+/**
+ * DELETE a donation campaign by ID
+ */
+export const deleteDonation = async (id: number | string) => {
+  try {
+    const response = await axios.delete(`${BASE_URL}/donations/${id}`);
+    return response.data; // { message: "Donation campaign deleted successfully" }
+  } catch (err: any) {
+    return { error: err.response?.data?.message || "Failed to delete donation" };
+  }
+};

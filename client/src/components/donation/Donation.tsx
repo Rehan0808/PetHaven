@@ -5,18 +5,28 @@ import useAuth from "../../context/userContext/useAuth";
 
 export const Donation = () => {
   const { user } = useAuth();
-  const [showForm, setShowForm] = useState(false);
+
+  // Form states
   const [petName, setPetName] = useState("");
   const [maxDonation, setMaxDonation] = useState("");
   const [lastDate, setLastDate] = useState("");
   const [shortInfo, setShortInfo] = useState("");
   const [longDescription, setLongDescription] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  // List of all donation campaigns
   const [donationCampaigns, setDonationCampaigns] = useState<any[]>([]);
 
-  // State to handle delete confirmation modal
+  // Whether the create/edit form modal is visible
+  const [showForm, setShowForm] = useState(false);
+
+  // For confirming campaign deletion in a modal
   const [campaignToDelete, setCampaignToDelete] = useState<number | null>(null);
 
+  // If non-null, we are editing this campaign; otherwise, we’re creating a new one
+  const [editingCampaign, setEditingCampaign] = useState<any | null>(null);
+
+  // Fetch campaigns on mount
   useEffect(() => {
     const fetchCampaigns = async () => {
       try {
@@ -26,7 +36,7 @@ export const Donation = () => {
             id: dbRow.id,
             petName: dbRow.pet_name,
             maxDonation: dbRow.max_donation,
-            lastDate: dbRow.last_date,
+            lastDate: dbRow.last_date, // We can still display it if returned
             shortInfo: dbRow.short_info,
             longDescription: dbRow.long_description,
             serverImagePath: dbRow.image_path,
@@ -37,62 +47,123 @@ export const Donation = () => {
         console.error("Error fetching donation campaigns:", err);
       }
     };
-
     fetchCampaigns();
   }, []);
 
+  // Handle file input changes
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.length) {
       setSelectedFile(e.target.files[0]);
     }
   };
 
+  // Populate the form with an existing campaign’s data, then show the form
+  const handleEdit = (campaign: any) => {
+    setEditingCampaign(campaign);
+
+    setPetName(campaign.petName);
+    setMaxDonation(campaign.maxDonation);
+    setLastDate(campaign.lastDate);
+    setShortInfo(campaign.shortInfo);
+    setLongDescription(campaign.longDescription);
+
+    setSelectedFile(null);
+    setShowForm(true);
+  };
+
+  // Shared submit handler for create/edit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const formData = new FormData();
       formData.append("petName", petName);
       formData.append("maxDonation", maxDonation);
-      formData.append("lastDate", lastDate);
+      // We do NOT append "lastDate" here
       formData.append("shortInfo", shortInfo);
       formData.append("longDescription", longDescription);
-      if (selectedFile) formData.append("image", selectedFile);
+      if (selectedFile) {
+        formData.append("image", selectedFile);
+      }
 
-      const response = await axios.post("/api/v1/donations", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      if (editingCampaign) {
+        // PUT request to update the existing campaign
+        const updateRes = await axios.put(
+          `/api/v1/donations/${editingCampaign.id}`,
+          formData,
+          { headers: { "Content-Type": "multipart/form-data" } }
+        );
 
-      setDonationCampaigns((prev) => [
-        ...prev,
-        {
-          id: response.data.data.id,
-          petName: response.data.data.pet_name,
-          maxDonation: response.data.data.max_donation,
-          lastDate: response.data.data.last_date,
-          shortInfo: response.data.data.short_info,
-          longDescription: response.data.data.long_description,
-          serverImagePath: response.data.data.image_path,
-          localPreview: selectedFile ? URL.createObjectURL(selectedFile) : null,
-        },
-      ]);
+        // Update local state
+        setDonationCampaigns((prev) =>
+          prev.map((c) =>
+            c.id === editingCampaign.id
+              ? {
+                  ...c,
+                  petName: updateRes.data.data.pet_name,
+                  maxDonation: updateRes.data.data.max_donation,
+                  lastDate: updateRes.data.data.last_date,
+                  shortInfo: updateRes.data.data.short_info,
+                  longDescription: updateRes.data.data.long_description,
+                  serverImagePath: updateRes.data.data.image_path,
+                  localPreview: selectedFile
+                    ? URL.createObjectURL(selectedFile)
+                    : c.localPreview,
+                }
+              : c
+          )
+        );
+      } else {
+        // POST request to create a new campaign
+        const createRes = await axios.post("/api/v1/donations", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
 
-      // Reset form
-      setPetName("");
-      setMaxDonation("");
-      setLastDate("");
-      setShortInfo("");
-      setLongDescription("");
-      setSelectedFile(null);
-      setShowForm(false);
+        // Add to local state
+        setDonationCampaigns((prev) => [
+          ...prev,
+          {
+            id: createRes.data.data.id,
+            petName: createRes.data.data.pet_name,
+            maxDonation: createRes.data.data.max_donation,
+            lastDate: createRes.data.data.last_date,
+            shortInfo: createRes.data.data.short_info,
+            longDescription: createRes.data.data.long_description,
+            serverImagePath: createRes.data.data.image_path,
+            localPreview: selectedFile
+              ? URL.createObjectURL(selectedFile)
+              : null,
+          },
+        ]);
+      }
+
+      // Reset form & close modal
+      resetForm();
     } catch (err) {
-      console.error("Error creating donation campaign:", err);
+      console.error(
+        editingCampaign
+          ? "Error updating donation campaign:"
+          : "Error creating donation campaign:",
+        err
+      );
     }
   };
 
-  // Handler when confirming deletion from the modal (optimistic update)
+  // Reset all form states & close modal
+  const resetForm = () => {
+    setPetName("");
+    setMaxDonation("");
+    setLastDate("");
+    setShortInfo("");
+    setLongDescription("");
+    setSelectedFile(null);
+    setEditingCampaign(null);
+    setShowForm(false);
+  };
+
+  // Delete confirmation
   const confirmDelete = async () => {
     if (campaignToDelete !== null) {
-      // Optimistically remove the campaign from UI
+      // Remove from UI first (optimistic update)
       setDonationCampaigns((prev) =>
         prev.filter((campaign) => campaign.id !== campaignToDelete)
       );
@@ -101,7 +172,6 @@ export const Donation = () => {
         await axios.delete(`/api/v1/donations/${campaignToDelete}`);
       } catch (err) {
         console.error("Error deleting donation campaign:", err);
-        // Optionally re-fetch campaigns or revert the UI change if needed.
       } finally {
         setCampaignToDelete(null);
       }
@@ -110,9 +180,16 @@ export const Donation = () => {
 
   return (
     <div className="flex flex-col items-center justify-center p-4 bg-[#E5E7EB] min-h-screen text-[#111827]">
+      {/* Page Header */}
       <div className="flex items-center space-x-2">
         <h1 className="text-3xl font-bold text-center">Make a Donation</h1>
-        <button onClick={() => setShowForm((prev) => !prev)} aria-label="Toggle form">
+        <button
+          onClick={() => {
+            resetForm(); // Clear any editing data if user wants to create new
+            setShowForm(true);
+          }}
+          aria-label="Toggle form"
+        >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
@@ -127,6 +204,8 @@ export const Donation = () => {
       </div>
 
       <h2 className="text-2xl font-bold mt-8 mb-6">Donation Campaign</h2>
+
+      {/* Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-6xl">
         {donationCampaigns.map((campaign) => {
           const imageSrc =
@@ -137,15 +216,15 @@ export const Donation = () => {
             <div
               key={campaign.id}
               className="
-                bg-[#E5E7EB] 
-                text-[#111827] 
-                rounded-lg 
-                shadow-2xl 
-                hover:shadow-[0_35px_60px_-10px_rgba(0,0,0,0.3)] 
-                transition-shadow 
-                w-80 
-                mx-auto 
-                border 
+                bg-[#E5E7EB]
+                text-[#111827]
+                rounded-lg
+                shadow-2xl
+                hover:shadow-[0_35px_60px_-10px_rgba(0,0,0,0.3)]
+                transition-shadow
+                w-80
+                mx-auto
+                border
                 border-gray-300
               "
             >
@@ -157,22 +236,43 @@ export const Donation = () => {
                 />
               )}
               <div className="p-4">
-                <h3 className="text-xl font-semibold mb-2">
-                  {campaign.petName}
-                </h3>
-                <p className="text-sm mb-1">
-                  Date: {campaign.lastDate}
-                </p>
+                <h3 className="text-xl font-semibold mb-2">{campaign.petName}</h3>
+                <p className="text-sm mb-1">Date: {campaign.lastDate}</p>
                 <p className="text-sm mb-1">
                   Donation Amount: {campaign.maxDonation}
                 </p>
+
+                {/* View Details Button */}
                 <Link to={`/donation/${campaign.id}`}>
                   <button className="bg-[#E67E22] hover:bg-[#cf6e1d] text-white px-4 py-2 mt-3 rounded font-bold mr-2">
                     View Details
                   </button>
                 </Link>
 
-                {/* Show Delete button ONLY if user is logged in */}
+                {/* Edit Icon Button */}
+                <button
+                  onClick={() => handleEdit(campaign)}
+                  className="inline-flex items-center text-blue-600 hover:text-blue-800 px-2 mt-3"
+                  aria-label="Edit Donation Campaign"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={2}
+                    stroke="currentColor"
+                    className="w-5 h-5"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M15.232 5.232l3.536 3.536m-2.036-5.036
+                        a2.5 2.5 0 013.536 3.536L7.5 21H3v-4.5l13.732-13.732z"
+                    />
+                  </svg>
+                </button>
+
+                {/* Delete Button (only if user is logged in) */}
                 {user && (
                   <button
                     onClick={() => setCampaignToDelete(campaign.id)}
@@ -187,23 +287,25 @@ export const Donation = () => {
         })}
       </div>
 
+      {/* Create or Edit Form Modal (no date field) */}
       {showForm && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="absolute inset-0" onClick={() => setShowForm(false)} />
+          {/* Clicking the gray background closes the modal */}
+          <div className="absolute inset-0" onClick={() => resetForm()} />
           <form
             onClick={(e) => e.stopPropagation()}
             onSubmit={handleSubmit}
             className="relative bg-white p-6 rounded shadow text-[#111827] w-full max-w-lg z-50"
           >
             <h2 className="text-lg font-semibold mb-4">
-              Create Donation Campaign
+              {editingCampaign ? "Edit Donation Campaign" : "Create Donation Campaign"}
             </h2>
 
             <input
               type="text"
               value={petName}
               onChange={(e) => setPetName(e.target.value)}
-              className="w-full px-2 py-1 rounded border border-gray-300 text-[#111827] text-sm mb-3"
+              className="w-full px-2 py-1 rounded border border-gray-300 text-sm mb-3"
               placeholder="Pet Name"
               required
             />
@@ -211,30 +313,23 @@ export const Donation = () => {
               type="number"
               value={maxDonation}
               onChange={(e) => setMaxDonation(e.target.value)}
-              className="w-full px-2 py-1 rounded border border-gray-300 text-[#111827] text-sm mb-3"
+              className="w-full px-2 py-1 rounded border border-gray-300 text-sm mb-3"
               placeholder="Donation Amount"
               required
             />
-            <input
-              type="text"
-              value={lastDate}
-              onChange={(e) => setLastDate(e.target.value)}
-              className="w-full px-2 py-1 rounded border border-gray-300 text-[#111827] text-sm mb-3"
-              placeholder="Date (MM/DD/YYYY)"
-              required
-            />
+
             <input
               type="text"
               value={shortInfo}
               onChange={(e) => setShortInfo(e.target.value)}
-              className="w-full px-2 py-1 rounded border border-gray-300 text-[#111827] text-sm mb-3"
+              className="w-full px-2 py-1 rounded border border-gray-300 text-sm mb-3"
               placeholder="Short Info"
               required
             />
             <textarea
               value={longDescription}
               onChange={(e) => setLongDescription(e.target.value)}
-              className="w-full px-2 py-1 rounded border border-gray-300 text-[#111827] text-sm mb-3"
+              className="w-full px-2 py-1 rounded border border-gray-300 text-sm mb-3"
               placeholder="Long Description"
               rows={3}
               required
@@ -255,16 +350,16 @@ export const Donation = () => {
             <div className="flex justify-end space-x-2 mt-4">
               <button
                 type="button"
-                onClick={() => setShowForm(false)}
+                onClick={() => resetForm()}
                 className="bg-gray-400 hover:bg-gray-500 text-white px-3 py-1 rounded text-sm font-bold"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="bg-[#E67E22] hover:bg-[#cf6e1d] text-white px-3 py-1 rounded text-sm font-bold"
+                className="bg-[#E67E22] hover:bg-[#cf6e1d] text-white px-4 py-2 rounded text-sm font-bold"
               >
-                Add Donation Campaign
+                {editingCampaign ? "Update Campaign" : "Add Donation Campaign"}
               </button>
             </div>
           </form>
