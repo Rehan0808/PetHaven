@@ -134,6 +134,13 @@ export const PetCard = ({ pet, onDelete, onEdit }: PetCardProps) => {
       </div>
 
       <div className="p-3">
+        {/* Pet Name */}
+        {pet.name && (
+          <h2 className="text-xl font-bold text-[#111827] mb-2">
+            {pet.name}
+          </h2>
+        )}
+
         {/* Gender & Age */}
         <div className="flex items-center justify-start mb-2">
           <span className="mr-3 text-lg font-bold text-[#111827]">
@@ -150,7 +157,8 @@ export const PetCard = ({ pet, onDelete, onEdit }: PetCardProps) => {
         {/* Adoption Fee */}
         <div className="flex items-center justify-between mb-1">
           <span className="text-md text-[#111827]">
-            <span className="font-bold">Adoption Fee: </span>${pet.fee ?? "N/A"}
+            <span className="font-bold">Adoption Fee: </span>
+            ${pet.fee ?? "N/A"}
           </span>
         </div>
 
